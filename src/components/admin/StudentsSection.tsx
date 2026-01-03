@@ -8,8 +8,7 @@ import {
   Search,
   Edit,
   Trash2,
-  Upload,
-  Download,
+  FileSpreadsheet,
   CalendarIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,6 +51,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import StudentExcelImport from "./StudentExcelImport";
 
 interface Student {
   id: string;
@@ -83,6 +83,8 @@ const StudentsSection = () => {
   const [classFilter, setClassFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isExcelImportOpen, setIsExcelImportOpen] = useState(false);
+  const [isDeploymentActive, setIsDeploymentActive] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState({
     student_id: "",
@@ -100,7 +102,17 @@ const StudentsSection = () => {
 
   useEffect(() => {
     fetchStudents();
+    checkDeploymentStatus();
   }, []);
+
+  const checkDeploymentStatus = async () => {
+    const { data } = await supabase
+      .from('exams')
+      .select('is_deployed')
+      .eq('is_deployed', true)
+      .limit(1);
+    setIsDeploymentActive((data?.length || 0) > 0);
+  };
 
   const fetchStudents = async () => {
     setIsLoading(true);
@@ -281,9 +293,14 @@ const StudentsSection = () => {
             </SelectContent>
           </Select>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Add Student
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsExcelImportOpen(true)}>
+            <FileSpreadsheet className="mr-2 h-4 w-4" /> Import Excel
+          </Button>
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="mr-2 h-4 w-4" /> Add Student
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -516,6 +533,14 @@ const StudentsSection = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Excel Import Dialog */}
+      <StudentExcelImport
+        open={isExcelImportOpen}
+        onOpenChange={setIsExcelImportOpen}
+        onImportSuccess={fetchStudents}
+        isDeploymentActive={isDeploymentActive}
+      />
     </div>
   );
 };
