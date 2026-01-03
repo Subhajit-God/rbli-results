@@ -176,21 +176,25 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <ResultHeader />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-10 md:py-16">
         {!resultData ? (
-          <div className="max-w-md mx-auto">
-            <Card className="shadow-card border-primary/10">
-              <CardHeader className="text-center space-y-2">
-                <CardTitle className="text-2xl text-foreground">
+          <div className="max-w-md mx-auto animate-fade-in">
+            <Card className="shadow-official border-2 border-primary/10 overflow-hidden backdrop-blur-sm">
+              <div className="h-1.5 gold-gradient" />
+              <CardHeader className="text-center space-y-3 pb-2">
+                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                  <Shield className="h-7 w-7 text-primary" />
+                </div>
+                <CardTitle className="text-2xl md:text-3xl text-foreground font-bold">
                   Check Your Result
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-base text-muted-foreground">
                   Enter your details below to view your examination result
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4 pb-8 px-6 md:px-8">
                 {error && (
-                  <Alert variant="destructive" className="mb-6">
+                  <Alert variant="destructive" className="mb-6 animate-fade-in">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
@@ -198,12 +202,17 @@ const Index = () => {
                 <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} />
               </CardContent>
             </Card>
+            
+            {/* Help text */}
+            <p className="text-center text-sm text-muted-foreground mt-6">
+              Having trouble? Contact the school office for assistance.
+            </p>
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
             <button 
               onClick={() => setResultData(null)}
-              className="text-primary hover:underline text-sm print:hidden"
+              className="text-primary hover:text-primary/80 text-sm print:hidden flex items-center gap-1 transition-colors font-medium"
             >
               ← Back to Search
             </button>
@@ -219,19 +228,24 @@ const Index = () => {
       </main>
 
       {/* Admin Login Button - Bottom Left */}
-      <div className="fixed bottom-4 left-4 print:hidden">
+      <div className="fixed bottom-4 left-4 print:hidden z-50">
         <Link 
           to="/admin/auth"
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors bg-card/80 backdrop-blur-sm px-3 py-2 rounded-md border border-border shadow-sm"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 bg-card/95 backdrop-blur-sm px-4 py-2.5 rounded-full border border-border shadow-md hover:shadow-lg hover:border-primary/30"
         >
-          <Shield className="h-3 w-3" />
-          Admin Login / Register
+          <Shield className="h-3.5 w-3.5" />
+          Admin Login
         </Link>
       </div>
 
       {/* Footer */}
-      <footer className="bg-muted/50 border-t border-border py-4 text-center text-sm text-muted-foreground print:hidden">
-        <p>© {new Date().getFullYear()} Ramjibanpur Babulal Institution. All Rights Reserved.</p>
+      <footer className="bg-muted/30 border-t border-border py-6 text-center print:hidden">
+        <p className="text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Ramjibanpur Babulal Institution. All Rights Reserved.
+        </p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          Excellence in Education Since 1925
+        </p>
       </footer>
     </div>
   );
