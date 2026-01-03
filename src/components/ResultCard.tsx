@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, Award, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
 
 interface StudentDetails {
@@ -60,91 +61,94 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
   return (
     <Card className="shadow-official border-2 border-primary/10 overflow-hidden print:shadow-none print:border">
       {/* Header */}
-      <CardHeader className="header-gradient text-primary-foreground p-6 print:p-4">
-        <div className="flex items-center gap-4 justify-center">
-          <img 
-            src={schoolLogo} 
-            alt="School Logo" 
-            className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-primary-foreground/50"
-          />
+      <CardHeader className="header-gradient text-primary-foreground p-6 md:p-8 print:p-4 relative overflow-hidden">
+        {/* Decorative background */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-accent rounded-full translate-x-1/2 -translate-y-1/2" />
+        </div>
+        
+        <div className="flex items-center gap-4 justify-center relative z-10">
+          <div className="relative">
+            <div className="absolute inset-0 bg-accent/20 rounded-full blur-md" />
+            <img 
+              src={schoolLogo} 
+              alt="School Logo" 
+              className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-primary-foreground/50 relative z-10 shadow-lg"
+            />
+          </div>
           <div className="text-center">
-            <h2 className="text-xl md:text-2xl font-bold">Ramjibanpur Babulal Institution</h2>
-            <p className="text-sm text-primary-foreground/80">Estd. 1925</p>
+            <h2 className="text-xl md:text-2xl font-bold drop-shadow-sm">Ramjibanpur Babulal Institution</h2>
+            <p className="text-sm text-primary-foreground/70">Estd. 1925</p>
           </div>
         </div>
-        <div className="text-center mt-4">
-          <Badge className="gold-gradient text-accent-foreground border-none text-sm px-4 py-1">
+        <div className="text-center mt-5 relative z-10">
+          <Badge className="gold-gradient text-accent-foreground border-none text-sm px-6 py-1.5 shadow-md">
             {examName}
           </Badge>
         </div>
       </CardHeader>
 
-      <CardContent className="p-6 space-y-6">
+      <CardContent className="p-6 md:p-8 space-y-6">
         {/* Student Details */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg board-border">
-          <div>
-            <span className="text-xs text-muted-foreground">Student Name</span>
-            <p className="font-semibold text-foreground">{student.name}</p>
-          </div>
-          <div>
-            <span className="text-xs text-muted-foreground">Class</span>
-            <p className="font-semibold text-foreground">{student.classNumber}</p>
-          </div>
-          <div>
-            <span className="text-xs text-muted-foreground">Section</span>
-            <p className="font-semibold text-foreground">{student.section}</p>
-          </div>
-          <div>
-            <span className="text-xs text-muted-foreground">Roll Number</span>
-            <p className="font-semibold text-foreground">{student.rollNumber}</p>
-          </div>
-          <div>
-            <span className="text-xs text-muted-foreground">Student ID</span>
-            <p className="font-semibold text-foreground">{student.studentId}</p>
-          </div>
-          <div>
-            <span className="text-xs text-muted-foreground">Father's Name</span>
-            <p className="font-semibold text-foreground">{student.fatherName}</p>
-          </div>
-          <div className="col-span-2 md:col-span-3">
-            <span className="text-xs text-muted-foreground">Mother's Name</span>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-5 bg-muted/30 rounded-xl border border-border">
+          {[
+            { label: "Student Name", value: student.name },
+            { label: "Class", value: student.classNumber },
+            { label: "Section", value: student.section },
+            { label: "Roll Number", value: student.rollNumber },
+            { label: "Student ID", value: student.studentId },
+            { label: "Father's Name", value: student.fatherName },
+          ].map((item, i) => (
+            <div key={i} className="space-y-1">
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{item.label}</span>
+              <p className="font-semibold text-foreground">{item.value}</p>
+            </div>
+          ))}
+          <div className="col-span-2 md:col-span-3 space-y-1">
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Mother's Name</span>
             <p className="font-semibold text-foreground">{student.motherName}</p>
           </div>
         </div>
 
         {/* Marks Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="header-gradient text-primary-foreground">
-                <th className="border border-primary/30 p-2 text-left">Subject</th>
-                <th className="border border-primary/30 p-2 text-center">I (FM)</th>
-                <th className="border border-primary/30 p-2 text-center">II (FM)</th>
-                <th className="border border-primary/30 p-2 text-center">III (FM)</th>
-                <th className="border border-primary/30 p-2 text-center">Total</th>
-                <th className="border border-primary/30 p-2 text-center">%</th>
+                <th className="p-3 text-left font-semibold">Subject</th>
+                <th className="p-3 text-center font-semibold">I (FM)</th>
+                <th className="p-3 text-center font-semibold">II (FM)</th>
+                <th className="p-3 text-center font-semibold">III (FM)</th>
+                <th className="p-3 text-center font-semibold">Total</th>
+                <th className="p-3 text-center font-semibold">%</th>
               </tr>
             </thead>
             <tbody>
               {marks.map((row, index) => (
                 <tr 
                   key={index} 
-                  className={index % 2 === 0 ? 'bg-card' : 'bg-muted/30'}
+                  className={cn(
+                    "transition-colors hover:bg-muted/50",
+                    index % 2 === 0 ? 'bg-card' : 'bg-muted/20'
+                  )}
                 >
-                  <td className="border border-border p-2 font-medium">{row.subject}</td>
-                  <td className="border border-border p-2 text-center">
-                    {row.marks1} ({row.fullMarks1})
+                  <td className="p-3 font-medium border-t border-border">{row.subject}</td>
+                  <td className="p-3 text-center border-t border-border">
+                    <span className="font-medium">{row.marks1}</span>
+                    <span className="text-muted-foreground text-xs ml-1">({row.fullMarks1})</span>
                   </td>
-                  <td className="border border-border p-2 text-center">
-                    {row.marks2} ({row.fullMarks2})
+                  <td className="p-3 text-center border-t border-border">
+                    <span className="font-medium">{row.marks2}</span>
+                    <span className="text-muted-foreground text-xs ml-1">({row.fullMarks2})</span>
                   </td>
-                  <td className="border border-border p-2 text-center">
-                    {row.marks3} ({row.fullMarks3})
+                  <td className="p-3 text-center border-t border-border">
+                    <span className="font-medium">{row.marks3}</span>
+                    <span className="text-muted-foreground text-xs ml-1">({row.fullMarks3})</span>
                   </td>
-                  <td className="border border-border p-2 text-center font-semibold">
+                  <td className="p-3 text-center border-t border-border font-bold text-primary">
                     {row.total}/{row.fullTotal}
                   </td>
-                  <td className="border border-border p-2 text-center font-semibold">
+                  <td className="p-3 text-center border-t border-border font-semibold">
                     {row.percentage.toFixed(1)}%
                   </td>
                 </tr>
@@ -154,43 +158,48 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
         </div>
 
         {/* Result Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-muted/50 p-4 rounded-lg text-center board-border">
-            <span className="text-xs text-muted-foreground block">Grand Total</span>
-            <p className="text-xl font-bold text-foreground">
-              {summary.grandTotal}/{summary.fullMarks}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm">
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1">Grand Total</span>
+            <p className="text-xl md:text-2xl font-bold text-foreground">
+              {summary.grandTotal}<span className="text-muted-foreground text-base font-normal">/{summary.fullMarks}</span>
             </p>
           </div>
-          <div className="bg-muted/50 p-4 rounded-lg text-center board-border">
-            <span className="text-xs text-muted-foreground block">Percentage</span>
-            <p className="text-xl font-bold text-foreground flex items-center justify-center gap-1">
-              <TrendingUp className="h-4 w-4" />
-              {summary.percentage.toFixed(2)}%
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm">
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1">Percentage</span>
+            <p className="text-xl md:text-2xl font-bold text-foreground flex items-center justify-center gap-1">
+              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              {summary.percentage.toFixed(1)}%
             </p>
           </div>
-          <div className="bg-muted/50 p-4 rounded-lg text-center board-border">
-            <span className="text-xs text-muted-foreground block">Grade</span>
-            <Badge className={`text-lg px-3 py-1 ${getGradeColor(summary.grade)}`}>
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm">
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-2">Grade</span>
+            <Badge className={`text-lg px-4 py-1 ${getGradeColor(summary.grade)}`}>
               {summary.grade}
             </Badge>
           </div>
-          <div className={`p-4 rounded-lg text-center board-border ${
-            summary.isPassed ? 'bg-success/10' : 'bg-destructive/10'
-          }`}>
-            <span className="text-xs text-muted-foreground block">Result</span>
+          <div className={cn(
+            "p-4 rounded-xl text-center border shadow-sm",
+            summary.isPassed 
+              ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/30' 
+              : 'bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30'
+          )}>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-2">Result</span>
             <Badge 
-              className={summary.isPassed 
-                ? 'bg-success text-success-foreground' 
-                : 'bg-destructive text-destructive-foreground'
-              }
+              className={cn(
+                "text-base px-4 py-1",
+                summary.isPassed 
+                  ? 'bg-success text-success-foreground' 
+                  : 'bg-destructive text-destructive-foreground'
+              )}
             >
               {summary.isPassed ? 'PASS' : 'FAIL'}
             </Badge>
           </div>
-          <div className="bg-secondary p-4 rounded-lg text-center board-border">
-            <span className="text-xs text-muted-foreground block">Class Rank</span>
-            <p className="text-xl font-bold text-secondary-foreground flex items-center justify-center gap-1">
-              <Award className="h-5 w-5 text-accent" />
+          <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-secondary to-secondary/80 p-4 rounded-xl text-center border border-accent/30 shadow-sm">
+            <span className="text-xs text-secondary-foreground/70 font-medium uppercase tracking-wide block mb-1">Class Rank</span>
+            <p className="text-xl md:text-2xl font-bold text-secondary-foreground flex items-center justify-center gap-2">
+              <Award className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               {summary.rank}
             </p>
           </div>
@@ -201,9 +210,10 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
           <div className="flex justify-center pt-4 print:hidden">
             <Button 
               onClick={onDownloadPDF}
-              className="gold-gradient text-accent-foreground hover:opacity-90"
+              size="lg"
+              className="gold-gradient text-accent-foreground hover:opacity-90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-5 w-5" />
               Download PDF Result
             </Button>
           </div>
