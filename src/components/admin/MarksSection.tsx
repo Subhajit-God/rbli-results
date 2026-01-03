@@ -70,6 +70,7 @@ const MarksSection = () => {
   const [selectedClass, setSelectedClass] = useState<string>("5");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [editedMarks, setEditedMarks] = useState<Record<string, { marks_1: string; marks_2: string; marks_3: string }>>({});
+  const [markErrors, setMarkErrors] = useState<Record<string, { marks_1?: string; marks_2?: string; marks_3?: string }>>({});
   const [isLocked, setIsLocked] = useState(false);
   
   const { toast } = useToast();
@@ -149,11 +150,50 @@ const MarksSection = () => {
   const filteredStudents = students.filter(s => s.class_number.toString() === selectedClass);
   const currentSubject = subjects.find(s => s.id === selectedSubject);
 
+  const getFullMarksForField = (field: 'marks_1' | 'marks_2' | 'marks_3'): number => {
+    if (!currentSubject) return 0;
+    if (field === 'marks_1') return currentSubject.full_marks_1;
+    if (field === 'marks_2') return currentSubject.full_marks_2;
+    return currentSubject.full_marks_3;
+  };
+
   const handleMarkChange = (studentId: string, field: 'marks_1' | 'marks_2' | 'marks_3', value: string) => {
     // Validate: only numbers, AB, or EX
     const upperValue = value.toUpperCase();
     if (value && !['AB', 'EX'].includes(upperValue) && isNaN(parseFloat(value))) {
       return;
+    }
+
+    // Clear error when value changes
+    setMarkErrors(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [field]: undefined,
+      },
+    }));
+
+    // Validate against full marks
+    const fullMarks = getFullMarksForField(field);
+    if (value && !['AB', 'EX'].includes(upperValue)) {
+      const numValue = parseFloat(value);
+      if (numValue < 0) {
+        setMarkErrors(prev => ({
+          ...prev,
+          [studentId]: {
+            ...prev[studentId],
+            [field]: "Marks cannot be negative.",
+          },
+        }));
+      } else if (numValue > fullMarks) {
+        setMarkErrors(prev => ({
+          ...prev,
+          [studentId]: {
+            ...prev[studentId],
+            [field]: `Marks cannot exceed full marks (${fullMarks}).`,
+          },
+        }));
+      }
     }
 
     setEditedMarks(prev => ({
@@ -163,6 +203,12 @@ const MarksSection = () => {
         [field]: value,
       },
     }));
+  };
+
+  const hasValidationErrors = (): boolean => {
+    return Object.values(markErrors).some(errors => 
+      errors.marks_1 || errors.marks_2 || errors.marks_3
+    );
   };
 
   const handleSave = async () => {
@@ -288,7 +334,7 @@ const MarksSection = () => {
             </div>
 
             <div className="flex items-end gap-2">
-              <Button onClick={handleSave} disabled={!selectedExam || !selectedSubject || isLocked || isSaving}>
+              <Button onClick={handleSave} disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors()}>
                 <Save className="mr-2 h-4 w-4" />
                 {isSaving ? "Saving..." : "Save Marks"}
               </Button>
@@ -355,31 +401,52 @@ const MarksSection = () => {
                           <TableCell>{student.roll_number}</TableCell>
                           <TableCell className="font-medium">{student.name}</TableCell>
                           <TableCell>
-                            <Input
-                              className="w-20 text-center mx-auto"
-                              value={studentMarks.marks_1}
-                              onChange={(e) => handleMarkChange(student.id, 'marks_1', e.target.value)}
-                              placeholder="—"
-                              disabled={isLocked}
-                            />
+                            <div className="flex flex-col items-center">
+                              <Input
+                                className={`w-20 text-center mx-auto ${markErrors[student.id]?.marks_1 ? 'border-destructive' : ''}`}
+                                value={studentMarks.marks_1}
+                                onChange={(e) => handleMarkChange(student.id, 'marks_1', e.target.value)}
+                                placeholder="—"
+                                disabled={isLocked}
+                                max={currentSubject.full_marks_1}
+                                min={0}
+                              />
+                              {markErrors[student.id]?.marks_1 && (
+                                <span className="text-xs text-destructive mt-1">{markErrors[student.id].marks_1}</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <Input
-                              className="w-20 text-center mx-auto"
-                              value={studentMarks.marks_2}
-                              onChange={(e) => handleMarkChange(student.id, 'marks_2', e.target.value)}
-                              placeholder="—"
-                              disabled={isLocked}
-                            />
+                            <div className="flex flex-col items-center">
+                              <Input
+                                className={`w-20 text-center mx-auto ${markErrors[student.id]?.marks_2 ? 'border-destructive' : ''}`}
+                                value={studentMarks.marks_2}
+                                onChange={(e) => handleMarkChange(student.id, 'marks_2', e.target.value)}
+                                placeholder="—"
+                                disabled={isLocked}
+                                max={currentSubject.full_marks_2}
+                                min={0}
+                              />
+                              {markErrors[student.id]?.marks_2 && (
+                                <span className="text-xs text-destructive mt-1">{markErrors[student.id].marks_2}</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <Input
-                              className="w-20 text-center mx-auto"
-                              value={studentMarks.marks_3}
-                              onChange={(e) => handleMarkChange(student.id, 'marks_3', e.target.value)}
-                              placeholder="—"
-                              disabled={isLocked}
-                            />
+                            <div className="flex flex-col items-center">
+                              <Input
+                                className={`w-20 text-center mx-auto ${markErrors[student.id]?.marks_3 ? 'border-destructive' : ''}`}
+                                value={studentMarks.marks_3}
+                                onChange={(e) => handleMarkChange(student.id, 'marks_3', e.target.value)}
+                                placeholder="—"
+                                disabled={isLocked}
+                                max={currentSubject.full_marks_3}
+                                min={0}
+                              />
+                              {markErrors[student.id]?.marks_3 && (
+                                <span className="text-xs text-destructive mt-1">{markErrors[student.id].marks_3}</span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-center font-semibold">
                             {total} / {currentSubject.full_marks_1 + currentSubject.full_marks_2 + currentSubject.full_marks_3}
