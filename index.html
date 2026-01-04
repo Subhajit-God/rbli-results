@@ -3,20 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>Lovable App</title>
-    <meta name="description" content="Lovable Generated Project" />
-    <meta name="author" content="Lovable" />
+    <title>Ramjibanpur Babulal Institution - Student Result Portal</title>
+    <meta name="description" content="Official student result portal for Ramjibanpur Babulal Institution. Check your examination results for Class 5 to Class 9 securely online." />
+    <meta name="author" content="Ramjibanpur Babulal Institution" />
+    <meta name="keywords" content="Ramjibanpur Babulal Institution, RBI, student results, exam results, Class 5-9, school portal" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    <meta property="og:title" content="Lovable App" />
-    <meta property="og:description" content="Lovable Generated Project" />
+    <meta property="og:title" content="Ramjibanpur Babulal Institution - Student Result Portal" />
+    <meta property="og:description" content="Check your examination results for Class 5 to Class 9 securely online." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:title" content="Ramjibanpur Babulal Institution - Student Result Portal" />
+    <meta name="twitter:description" content="Check your examination results securely online." />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- Theme color for browser UI -->
+    <meta name="theme-color" content="#1e3a8a" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1e40af" media="(prefers-color-scheme: dark)" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <style>
+      /* Prevent FOUC for theme */
+      html {
+        color-scheme: light dark;
+      }
+      
+      /* Smooth theme transitions */
+      html.transitioning,
+      html.transitioning *,
+      html.transitioning *::before,
+      html.transitioning *::after {
+        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
+      }
+    </style>
+    
+    <script>
+      // Prevent flash of wrong theme
+      (function() {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
 
   <body>
