@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,10 @@ import { AlertCircle, Shield } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
 import ResultLookupForm from "@/components/ResultLookupForm";
 import ResultCard from "@/components/ResultCard";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
+import { Celebration } from "@/components/Celebration";
+import { useConfetti } from "@/hooks/useConfetti";
 
 interface ResultData {
   student: {
@@ -45,9 +49,35 @@ interface ResultData {
 
 const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
   const { toast } = useToast();
+  const { fireConfetti, fireSchoolColors, fireStars } = useConfetti();
+
+  // Simulate initial page load
+  useEffect(() => {
+    const timer = setTimeout(() => setIsInitialLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Trigger celebration when result is loaded
+  useEffect(() => {
+    if (resultData) {
+      setShowCelebration(true);
+      if (resultData.summary.isPassed) {
+        if (resultData.summary.percentage >= 90) {
+          fireStars();
+          setTimeout(() => fireSchoolColors(), 500);
+        } else if (resultData.summary.percentage >= 70) {
+          fireConfetti();
+        } else {
+          fireSchoolColors();
+        }
+      }
+    }
+  }, [resultData, fireConfetti, fireSchoolColors, fireStars]);
 
   const handleLookup = async (data: { studentId: string; classNumber: string; dob: Date }) => {
     setIsLoading(true);
@@ -173,16 +203,36 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
+      {/* Celebration Modal */}
+      {resultData && (
+        <Celebration
+          show={showCelebration}
+          isPassed={resultData.summary.isPassed}
+          percentage={resultData.summary.percentage}
+          grade={resultData.summary.grade}
+          onComplete={() => setShowCelebration(false)}
+        />
+      )}
+
       <ResultHeader />
       
+      {/* Theme Toggle - Top Right */}
+      <div className="fixed top-4 right-4 z-50 print:hidden">
+        <ThemeToggle />
+      </div>
+      
       <main className="flex-1 container mx-auto px-4 py-10 md:py-16">
-        {!resultData ? (
+        {isInitialLoading ? (
           <div className="max-w-md mx-auto animate-fade-in">
-            <Card className="shadow-official border-2 border-primary/10 overflow-hidden backdrop-blur-sm">
+            <ResultFormSkeleton />
+          </div>
+        ) : !resultData ? (
+          <div className="max-w-md mx-auto animate-fade-in">
+            <Card className="shadow-official border-2 border-primary/10 overflow-hidden backdrop-blur-sm transition-all duration-300 hover:shadow-lg">
               <div className="h-1.5 gold-gradient" />
               <CardHeader className="text-center space-y-3 pb-2">
-                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2 transition-transform hover:scale-110 duration-300">
                   <Shield className="h-7 w-7 text-primary" />
                 </div>
                 <CardTitle className="text-2xl md:text-3xl text-foreground font-bold">
@@ -204,15 +254,22 @@ const Index = () => {
             </Card>
             
             {/* Help text */}
-            <p className="text-center text-sm text-muted-foreground mt-6">
+            <p className="text-center text-sm text-muted-foreground mt-6 animate-fade-in">
               Having trouble? Contact the school office for assistance.
             </p>
+          </div>
+        ) : isLoading ? (
+          <div className="max-w-4xl mx-auto">
+            <ResultCardSkeleton />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
             <button 
-              onClick={() => setResultData(null)}
-              className="text-primary hover:text-primary/80 text-sm print:hidden flex items-center gap-1 transition-colors font-medium"
+              onClick={() => {
+                setResultData(null);
+                setShowCelebration(false);
+              }}
+              className="text-primary hover:text-primary/80 text-sm print:hidden flex items-center gap-1 transition-all duration-200 font-medium hover:translate-x-[-4px]"
             >
               ← Back to Search
             </button>
@@ -231,7 +288,7 @@ const Index = () => {
       <div className="fixed bottom-4 left-4 print:hidden z-50">
         <Link 
           to="/admin/auth"
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 bg-card/95 backdrop-blur-sm px-4 py-2.5 rounded-full border border-border shadow-md hover:shadow-lg hover:border-primary/30"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 bg-card/95 backdrop-blur-sm px-4 py-2.5 rounded-full border border-border shadow-md hover:shadow-lg hover:border-primary/30 hover:scale-105"
         >
           <Shield className="h-3.5 w-3.5" />
           Admin Login
@@ -239,7 +296,7 @@ const Index = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-muted/30 border-t border-border py-6 text-center print:hidden">
+      <footer className="bg-muted/30 border-t border-border py-6 text-center print:hidden transition-colors duration-300">
         <p className="text-sm text-muted-foreground">
           © {new Date().getFullYear()} Ramjibanpur Babulal Institution. All Rights Reserved.
         </p>

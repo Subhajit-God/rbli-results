@@ -16,11 +16,18 @@ import {
   FileText,
   AlertTriangle,
   Rocket,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Breadcrumb } from "@/components/Breadcrumb";
+import { DashboardStatsSkeleton } from "@/components/ui/result-skeleton";
 
 // Import dashboard sections
 import StudentsSection from "@/components/admin/StudentsSection";
@@ -48,8 +55,10 @@ const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalSubjects: 0,
@@ -115,6 +124,7 @@ const AdminDashboard = () => {
   };
 
   const fetchStats = async () => {
+    setIsStatsLoading(true);
     try {
       const [studentsRes, subjectsRes, examsRes] = await Promise.all([
         supabase.from('students').select('id', { count: 'exact', head: true }),
@@ -130,6 +140,8 @@ const AdminDashboard = () => {
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
+    } finally {
+      setIsStatsLoading(false);
     }
   };
 
@@ -145,10 +157,15 @@ const AdminDashboard = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+          <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
+
+  const currentNavItem = navItems.find(i => i.id === activeSection);
 
   const renderSection = () => {
     switch (activeSection) {
@@ -168,58 +185,62 @@ const AdminDashboard = () => {
         return <SettingsSection />;
       default:
         return (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in">
             <div>
               <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
               <p className="text-muted-foreground">Manage your school's examination system</p>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalStudents}</div>
-                  <p className="text-xs text-muted-foreground">Class 5 - Class 9</p>
-                </CardContent>
-              </Card>
+            {isStatsLoading ? (
+              <DashboardStatsSkeleton />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                    <p className="text-xs text-muted-foreground">Class 5 - Class 9</p>
+                  </CardContent>
+                </Card>
 
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Subjects</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalSubjects}</div>
-                  <p className="text-xs text-muted-foreground">Across all classes</p>
-                </CardContent>
-              </Card>
+                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Subjects</CardTitle>
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalSubjects}</div>
+                    <p className="text-xs text-muted-foreground">Across all classes</p>
+                  </CardContent>
+                </Card>
 
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Exams</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalExams}</div>
-                  <p className="text-xs text-muted-foreground">Summative evaluations</p>
-                </CardContent>
-              </Card>
+                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Exams</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalExams}</div>
+                    <p className="text-xs text-muted-foreground">Summative evaluations</p>
+                  </CardContent>
+                </Card>
 
-              <Card className="shadow-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Deployed</CardTitle>
-                  <Rocket className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.deployedExams}</div>
-                  <p className="text-xs text-muted-foreground">Results published</p>
-                </CardContent>
-              </Card>
-            </div>
+                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Deployed</CardTitle>
+                    <Rocket className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.deployedExams}</div>
+                    <p className="text-xs text-muted-foreground">Results published</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             {/* Quick Actions */}
             <Card className="shadow-card">
@@ -230,7 +251,7 @@ const AdminDashboard = () => {
               <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
                   onClick={() => setActiveSection("students")}
                 >
                   <Users className="h-6 w-6" />
@@ -238,7 +259,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
                   onClick={() => setActiveSection("marks")}
                 >
                   <ClipboardList className="h-6 w-6" />
@@ -246,7 +267,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
                   onClick={() => setActiveSection("ranks")}
                 >
                   <Award className="h-6 w-6" />
@@ -254,7 +275,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
                   onClick={() => setActiveSection("deploy")}
                 >
                   <Rocket className="h-6 w-6" />
@@ -274,13 +295,13 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                  <li>Add all students with their details (Student ID, Name, Class, etc.)</li>
-                  <li>Configure subjects and full marks for each class</li>
-                  <li>Create an examination (1st, 2nd, or 3rd Summative Evaluation)</li>
-                  <li>Enter marks for all students in each subject</li>
-                  <li>Lock marks to prevent accidental changes</li>
-                  <li>Review and finalize ranks (resolve any ties manually)</li>
-                  <li>Deploy results to make them visible to students</li>
+                  <li className="transition-colors hover:text-foreground">Add all students with their details (Student ID, Name, Class, etc.)</li>
+                  <li className="transition-colors hover:text-foreground">Configure subjects and full marks for each class</li>
+                  <li className="transition-colors hover:text-foreground">Create an examination (1st, 2nd, or 3rd Summative Evaluation)</li>
+                  <li className="transition-colors hover:text-foreground">Enter marks for all students in each subject</li>
+                  <li className="transition-colors hover:text-foreground">Lock marks to prevent accidental changes</li>
+                  <li className="transition-colors hover:text-foreground">Review and finalize ranks (resolve any ties manually)</li>
+                  <li className="transition-colors hover:text-foreground">Deploy results to make them visible to students</li>
                 </ol>
               </CardContent>
             </Card>
@@ -290,32 +311,35 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex transition-colors duration-300">
       {/* Sidebar */}
       <aside 
-        className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out
-          lg:translate-x-0 lg:static
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 bg-card border-r border-border transform transition-all duration-300 ease-in-out",
+          "lg:translate-x-0 lg:static",
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          isSidebarCollapsed ? 'lg:w-16' : 'w-64'
+        )}
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <img src={schoolLogo} alt="Logo" className="w-10 h-10 rounded-full" />
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-semibold text-foreground truncate">
-                  RBI Admin
-                </h2>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.email}
-                </p>
-              </div>
+              <img src={schoolLogo} alt="Logo" className="w-10 h-10 rounded-full flex-shrink-0" />
+              {!isSidebarCollapsed && (
+                <div className="flex-1 min-w-0 animate-fade-in">
+                  <h2 className="text-sm font-semibold text-foreground truncate">
+                    RBI Admin
+                  </h2>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden"
+                className="lg:hidden flex-shrink-0"
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <X className="h-5 w-5" />
@@ -324,42 +348,100 @@ const AdminDashboard = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeSection === item.id;
-              return (
+              return isSidebarCollapsed ? (
+                <Tooltip key={item.id} delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        setIsSidebarOpen(false);
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-center p-3 rounded-md transition-all duration-200",
+                        isActive 
+                          ? 'bg-primary text-primary-foreground shadow-md' 
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
                 <button
                   key={item.id}
                   onClick={() => {
                     setActiveSection(item.id);
                     setIsSidebarOpen(false);
                   }}
-                  className={`
-                    w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors
-                    ${isActive 
-                      ? 'bg-primary text-primary-foreground' 
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
+                    isActive 
+                      ? 'bg-primary text-primary-foreground shadow-md' 
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    }
-                  `}
+                  )}
                 >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Logout */}
-          <div className="p-4 border-t border-border">
+          {/* Collapse Toggle (Desktop) */}
+          <div className="hidden lg:block p-2 border-t border-border">
             <Button
               variant="ghost"
-              className="w-full justify-start text-muted-foreground hover:text-destructive"
-              onClick={handleLogout}
+              size="sm"
+              className="w-full justify-center"
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
+              {isSidebarCollapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <>
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  <span>Collapse</span>
+                </>
+              )}
             </Button>
+          </div>
+
+          {/* Logout */}
+          <div className="p-2 border-t border-border">
+            {isSidebarCollapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-full text-muted-foreground hover:text-destructive"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  Logout
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-muted-foreground hover:text-destructive transition-colors"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            )}
           </div>
         </div>
       </aside>
@@ -367,7 +449,7 @@ const AdminDashboard = () => {
       {/* Overlay for mobile */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden transition-opacity"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -375,7 +457,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-card border-b border-border px-4 py-3">
+        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border-b border-border px-4 py-3">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -386,11 +468,16 @@ const AdminDashboard = () => {
               <Menu className="h-5 w-5" />
             </Button>
             <div className="flex-1">
-              <h1 className="text-lg font-semibold text-foreground">
-                {navItems.find(i => i.id === activeSection)?.label || "Dashboard"}
-              </h1>
+              {/* Breadcrumb */}
+              <Breadcrumb 
+                items={[
+                  { label: "Admin", href: "/admin/dashboard" },
+                  { label: currentNavItem?.label || "Dashboard" }
+                ]}
+              />
             </div>
-            <Badge variant="outline" className="text-xs">
+            <ThemeToggle />
+            <Badge variant="outline" className="text-xs hidden sm:flex">
               Admin
             </Badge>
           </div>

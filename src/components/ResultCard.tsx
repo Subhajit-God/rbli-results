@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Download, Award, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
+import { PerformanceIndicator } from "@/components/PerformanceIndicator";
+import { AchievementsList } from "@/components/AchievementBadge";
 
 interface StudentDetails {
   name: string;
@@ -57,9 +59,15 @@ const getGradeColor = (grade: string) => {
   }
 };
 
+const getPerformanceColor = (percentage: number) => {
+  if (percentage >= 70) return 'text-success';
+  if (percentage >= 45) return 'text-warning';
+  return 'text-destructive';
+};
+
 const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: ResultCardProps) => {
   return (
-    <Card className="shadow-official border-2 border-primary/10 overflow-hidden print:shadow-none print:border">
+    <Card className="shadow-official border-2 border-primary/10 overflow-hidden print:shadow-none print:border transition-all duration-300">
       {/* Header */}
       <CardHeader className="header-gradient text-primary-foreground p-6 md:p-8 print:p-4 relative overflow-hidden">
         {/* Decorative background */}
@@ -89,8 +97,18 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
       </CardHeader>
 
       <CardContent className="p-6 md:p-8 space-y-6">
+        {/* Achievement Badges */}
+        {summary.isPassed && (
+          <div className="flex justify-center animate-fade-in">
+            <AchievementsList 
+              percentage={summary.percentage} 
+              rank={summary.rank} 
+            />
+          </div>
+        )}
+
         {/* Student Details */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-5 bg-muted/30 rounded-xl border border-border">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-5 bg-muted/30 rounded-xl border border-border transition-all duration-200 hover:bg-muted/40">
           {[
             { label: "Student Name", value: student.name },
             { label: "Class", value: student.classNumber },
@@ -120,7 +138,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
                 <th className="p-3 text-center font-semibold">II (FM)</th>
                 <th className="p-3 text-center font-semibold">III (FM)</th>
                 <th className="p-3 text-center font-semibold">Total</th>
-                <th className="p-3 text-center font-semibold">%</th>
+                <th className="p-3 text-center font-semibold">Performance</th>
               </tr>
             </thead>
             <tbody>
@@ -128,7 +146,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
                 <tr 
                   key={index} 
                   className={cn(
-                    "transition-colors hover:bg-muted/50",
+                    "transition-all duration-200 hover:bg-muted/50",
                     index % 2 === 0 ? 'bg-card' : 'bg-muted/20'
                   )}
                 >
@@ -148,8 +166,14 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
                   <td className="p-3 text-center border-t border-border font-bold text-primary">
                     {row.total}/{row.fullTotal}
                   </td>
-                  <td className="p-3 text-center border-t border-border font-semibold">
-                    {row.percentage.toFixed(1)}%
+                  <td className="p-3 border-t border-border">
+                    <div className="flex items-center justify-center">
+                      <PerformanceIndicator 
+                        value={row.total} 
+                        maxValue={row.fullTotal} 
+                        size="sm"
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -159,27 +183,30 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
 
         {/* Result Summary */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1">Grand Total</span>
             <p className="text-xl md:text-2xl font-bold text-foreground">
               {summary.grandTotal}<span className="text-muted-foreground text-base font-normal">/{summary.fullMarks}</span>
             </p>
           </div>
-          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1">Percentage</span>
-            <p className="text-xl md:text-2xl font-bold text-foreground flex items-center justify-center gap-1">
-              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            <p className={cn(
+              "text-xl md:text-2xl font-bold flex items-center justify-center gap-1",
+              getPerformanceColor(summary.percentage)
+            )}>
+              <TrendingUp className="h-4 w-4 md:h-5 md:w-5" />
               {summary.percentage.toFixed(1)}%
             </p>
           </div>
-          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-2">Grade</span>
             <Badge className={`text-lg px-4 py-1 ${getGradeColor(summary.grade)}`}>
               {summary.grade}
             </Badge>
           </div>
           <div className={cn(
-            "p-4 rounded-xl text-center border shadow-sm",
+            "p-4 rounded-xl text-center border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]",
             summary.isPassed 
               ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/30' 
               : 'bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30'
@@ -187,16 +214,16 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-2">Result</span>
             <Badge 
               className={cn(
-                "text-base px-4 py-1",
+                "text-base px-4 py-1 animate-pulse",
                 summary.isPassed 
                   ? 'bg-success text-success-foreground' 
                   : 'bg-destructive text-destructive-foreground'
               )}
             >
-              {summary.isPassed ? 'PASS' : 'FAIL'}
+              {summary.isPassed ? 'PASS ✓' : 'FAIL'}
             </Badge>
           </div>
-          <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-secondary to-secondary/80 p-4 rounded-xl text-center border border-accent/30 shadow-sm">
+          <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-secondary to-secondary/80 p-4 rounded-xl text-center border border-accent/30 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-secondary-foreground/70 font-medium uppercase tracking-wide block mb-1">Class Rank</span>
             <p className="text-xl md:text-2xl font-bold text-secondary-foreground flex items-center justify-center gap-2">
               <Award className="h-5 w-5 md:h-6 md:w-6 text-accent" />
