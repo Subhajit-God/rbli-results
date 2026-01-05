@@ -9,6 +9,7 @@ import { AlertCircle, Shield } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
 import ResultLookupForm from "@/components/ResultLookupForm";
 import ResultCard from "@/components/ResultCard";
+import ResultCardPDF from "@/components/ResultCardPDF";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
 import { Celebration } from "@/components/Celebration";
@@ -204,6 +205,18 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
+      {/* PDF Version - Hidden on screen, shown on print */}
+      {resultData && (
+        <div id="result-pdf-container" className="hidden print:block">
+          <ResultCardPDF
+            examName={resultData.examName}
+            student={resultData.student}
+            marks={resultData.marks}
+            summary={resultData.summary}
+          />
+        </div>
+      )}
+
       {/* Celebration Modal */}
       {resultData && (
         <Celebration
@@ -215,14 +228,16 @@ const Index = () => {
         />
       )}
 
-      <ResultHeader />
+      <div className="print:hidden">
+        <ResultHeader />
+      </div>
       
       {/* Theme Toggle - Top Right */}
       <div className="fixed top-4 right-4 z-50 print:hidden">
         <ThemeToggle />
       </div>
       
-      <main className="flex-1 container mx-auto px-4 py-10 md:py-16">
+      <main className="flex-1 container mx-auto px-4 py-10 md:py-16 print:hidden">
         {isInitialLoading ? (
           <div className="max-w-md mx-auto animate-fade-in">
             <ResultFormSkeleton />
@@ -239,7 +254,7 @@ const Index = () => {
                   Check Your Result
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
-                  Enter your details below to view your examination result
+                  Enter your details below to view your Summative Evaluation result
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4 pb-8 px-6 md:px-8">

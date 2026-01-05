@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { Save, Lock, Unlock, AlertTriangle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -150,6 +150,12 @@ const MarksSection = () => {
   const filteredStudents = students.filter(s => s.class_number.toString() === selectedClass);
   const currentSubject = subjects.find(s => s.id === selectedSubject);
 
+  // Check if full marks are configured
+  const isFullMarksConfigured = currentSubject && 
+    currentSubject.full_marks_1 > 0 && 
+    currentSubject.full_marks_2 > 0 && 
+    currentSubject.full_marks_3 > 0;
+
   const getFullMarksForField = (field: 'marks_1' | 'marks_2' | 'marks_3'): number => {
     if (!currentSubject) return 0;
     if (field === 'marks_1') return currentSubject.full_marks_1;
@@ -190,7 +196,7 @@ const MarksSection = () => {
           ...prev,
           [studentId]: {
             ...prev[studentId],
-            [field]: `Marks cannot exceed full marks (${fullMarks}).`,
+            [field]: `Exceeds full marks (${fullMarks})`,
           },
         }));
       }
@@ -275,7 +281,7 @@ const MarksSection = () => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Marks Entry</h2>
-        <p className="text-muted-foreground">Enter marks for students subject-wise</p>
+        <p className="text-muted-foreground">Enter marks for students subject-wise (Summative Evaluation)</p>
       </div>
 
       {/* Selection Controls */}
@@ -289,11 +295,15 @@ const MarksSection = () => {
                   <SelectValue placeholder="Select exam" />
                 </SelectTrigger>
                 <SelectContent>
-                  {exams.map(exam => (
-                    <SelectItem key={exam.id} value={exam.id}>
-                      {exam.name} ({exam.academic_year})
-                    </SelectItem>
-                  ))}
+                  {exams.length === 0 ? (
+                    <SelectItem value="none" disabled>No exams available</SelectItem>
+                  ) : (
+                    exams.map(exam => (
+                      <SelectItem key={exam.id} value={exam.id}>
+                        {exam.name} ({exam.academic_year})
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -324,17 +334,24 @@ const MarksSection = () => {
                   <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubjects.map(subject => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
+                  {filteredSubjects.length === 0 ? (
+                    <SelectItem value="none" disabled>No subjects for this class</SelectItem>
+                  ) : (
+                    filteredSubjects.map(subject => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="flex items-end gap-2">
-              <Button onClick={handleSave} disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors()}>
+              <Button 
+                onClick={handleSave} 
+                disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
+              >
                 <Save className="mr-2 h-4 w-4" />
                 {isSaving ? "Saving..." : "Save Marks"}
               </Button>
@@ -349,6 +366,16 @@ const MarksSection = () => {
         </CardContent>
       </Card>
 
+      {/* Full Marks Warning */}
+      {selectedSubject && !isFullMarksConfigured && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Full marks not configured!</strong> Please set full marks for this subject before entering marks. Go to Subjects → Edit this subject to configure full marks.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Marks Entry Table */}
       {selectedExam && selectedSubject && currentSubject ? (
         <Card>
@@ -357,7 +384,7 @@ const MarksSection = () => {
               <div>
                 <CardTitle>{currentSubject.name} - Class {selectedClass}</CardTitle>
                 <CardDescription>
-                  Enter marks for each component. Use AB for Absent, EX for Exempt.
+                  Enter marks for Summative I, II, III. Use AB for Absent, EX for Exempt.
                 </CardDescription>
               </div>
               {isLocked && (
@@ -368,7 +395,14 @@ const MarksSection = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {filteredStudents.length === 0 ? (
+            {!isFullMarksConfigured ? (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Please set full marks before entering marks.
+                </AlertDescription>
+              </Alert>
+            ) : filteredStudents.length === 0 ? (
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
@@ -407,7 +441,7 @@ const MarksSection = () => {
                                 value={studentMarks.marks_1}
                                 onChange={(e) => handleMarkChange(student.id, 'marks_1', e.target.value)}
                                 placeholder="—"
-                                disabled={isLocked}
+                                disabled={isLocked || !isFullMarksConfigured}
                                 max={currentSubject.full_marks_1}
                                 min={0}
                               />
@@ -423,7 +457,7 @@ const MarksSection = () => {
                                 value={studentMarks.marks_2}
                                 onChange={(e) => handleMarkChange(student.id, 'marks_2', e.target.value)}
                                 placeholder="—"
-                                disabled={isLocked}
+                                disabled={isLocked || !isFullMarksConfigured}
                                 max={currentSubject.full_marks_2}
                                 min={0}
                               />
@@ -439,7 +473,7 @@ const MarksSection = () => {
                                 value={studentMarks.marks_3}
                                 onChange={(e) => handleMarkChange(student.id, 'marks_3', e.target.value)}
                                 placeholder="—"
-                                disabled={isLocked}
+                                disabled={isLocked || !isFullMarksConfigured}
                                 max={currentSubject.full_marks_3}
                                 min={0}
                               />
@@ -463,7 +497,19 @@ const MarksSection = () => {
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            Select an examination, class, and subject to enter marks.
+            {exams.length === 0 ? (
+              <div className="space-y-2">
+                <AlertTriangle className="h-8 w-8 mx-auto text-warning" />
+                <p>No examination found. Create an examination first to enter marks.</p>
+              </div>
+            ) : filteredSubjects.length === 0 ? (
+              <div className="space-y-2">
+                <AlertTriangle className="h-8 w-8 mx-auto text-warning" />
+                <p>No subjects configured for this class. Add subjects first.</p>
+              </div>
+            ) : (
+              "Select an examination, class, and subject to enter marks."
+            )}
           </CardContent>
         </Card>
       )}

@@ -125,11 +125,45 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Print styles for PDF */
+  /* Print styles for A4 Landscape PDF */
   @media print {
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+
     body {
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+      background: white !important;
+    }
+
+    .print\\:hidden {
+      display: none !important;
+    }
+
+    .print\\:block {
+      display: block !important;
+    }
+
+    #result-pdf {
+      display: block !important;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 9999;
+      background: white;
+    }
+
+    /* Hide everything except the PDF result */
+    body > *:not(#result-pdf-container) {
+      display: none !important;
+    }
+
+    #result-pdf-container {
+      display: block !important;
     }
   }
 }

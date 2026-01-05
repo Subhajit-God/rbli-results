@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
 
 const loginSchema = z.object({
@@ -41,6 +42,7 @@ const AdminAuth = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { adminExists, isLoading: isCheckingAdmin } = useAdminCheck();
 
   useEffect(() => {
     // Check if already logged in
@@ -81,6 +83,13 @@ const AdminAuth = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Auto-switch to login tab if admin exists
+  useEffect(() => {
+    if (adminExists === true && activeTab === "register") {
+      setActiveTab("login");
+    }
+  }, [adminExists, activeTab]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -154,12 +163,30 @@ const AdminAuth = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Double-check at submission time
+    if (adminExists) {
+      setError("Admin account already exists. Registration is disabled.");
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     setFieldErrors({});
 
     try {
       const validatedData = registerSchema.parse(formData);
+
+      // Final backend check before registration
+      const { count } = await supabase
+        .from('admin_roles')
+        .select('*', { count: 'exact', head: true });
+
+      if ((count ?? 0) > 0) {
+        setError("Admin account already exists. Registration is disabled.");
+        setIsLoading(false);
+        return;
+      }
 
       const redirectUrl = `${window.location.origin}/admin/dashboard`;
 
@@ -214,6 +241,17 @@ const AdminAuth = () => {
     }
   };
 
+  if (isCheckingAdmin) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Checking system status...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <ResultHeader />
@@ -233,7 +271,10 @@ const AdminAuth = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-foreground">Admin Portal</CardTitle>
               <CardDescription>
-                Sign in or create an admin account
+                {adminExists 
+                  ? "Sign in to access the admin dashboard" 
+                  : "Create the first admin account to get started"
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -244,10 +285,32 @@ const AdminAuth = () => {
                 </Alert>
               )}
 
+              {/* Registration Blocked Notice */}
+              {adminExists && (
+                <Alert className="mb-6 border-warning/50 bg-warning/10">
+                  <ShieldAlert className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-warning-foreground">
+                    Admin account already exists. Registration is disabled. Only login is available.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* First Admin Notice */}
+              {adminExists === false && (
+                <Alert className="mb-6 border-success/50 bg-success/10">
+                  <ShieldCheck className="h-4 w-4 text-success" />
+                  <AlertDescription className="text-success-foreground">
+                    No admin account exists. Register to become the administrator.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="register">Register</TabsTrigger>
+                  <TabsTrigger value="register" disabled={adminExists === true}>
+                    Register
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
@@ -311,93 +374,103 @@ const AdminAuth = () => {
                 </TabsContent>
 
                 <TabsContent value="register">
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="register-email">Email</Label>
-                      <Input
-                        id="register-email"
-                        name="email"
-                        type="email"
-                        placeholder="admin@school.edu"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className={fieldErrors.email ? "border-destructive" : ""}
-                      />
-                      {fieldErrors.email && (
-                        <p className="text-sm text-destructive">{fieldErrors.email}</p>
-                      )}
+                  {adminExists ? (
+                    <div className="py-8 text-center">
+                      <ShieldAlert className="h-12 w-12 mx-auto text-warning mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">Registration Disabled</h3>
+                      <p className="text-muted-foreground">
+                        An admin account already exists. Registration is not allowed.
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-password">Password</Label>
-                      <div className="relative">
+                  ) : (
+                    <form onSubmit={handleRegister} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="register-email">Email</Label>
                         <Input
-                          id="register-password"
-                          name="password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={formData.password}
+                          id="register-email"
+                          name="email"
+                          type="email"
+                          placeholder="admin@school.edu"
+                          value={formData.email}
                           onChange={handleInputChange}
-                          className={fieldErrors.password ? "border-destructive pr-10" : "pr-10"}
+                          className={fieldErrors.email ? "border-destructive" : ""}
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
+                        {fieldErrors.email && (
+                          <p className="text-sm text-destructive">{fieldErrors.email}</p>
+                        )}
                       </div>
-                      {fieldErrors.password && (
-                        <p className="text-sm text-destructive">{fieldErrors.password}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="confirm-password"
-                          name="confirmPassword"
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          value={formData.confirmPassword}
-                          onChange={handleInputChange}
-                          className={fieldErrors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </Button>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-password">Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="register-password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={formData.password}
+                            onChange={handleInputChange}
+                            className={fieldErrors.password ? "border-destructive pr-10" : "pr-10"}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                        {fieldErrors.password && (
+                          <p className="text-sm text-destructive">{fieldErrors.password}</p>
+                        )}
                       </div>
-                      {fieldErrors.confirmPassword && (
-                        <p className="text-sm text-destructive">{fieldErrors.confirmPassword}</p>
-                      )}
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creating account...
-                        </>
-                      ) : (
-                        "Create Admin Account"
-                      )}
-                    </Button>
-                  </form>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password">Confirm Password</Label>
+                        <div className="relative">
+                          <Input
+                            id="confirm-password"
+                            name="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            value={formData.confirmPassword}
+                            onChange={handleInputChange}
+                            className={fieldErrors.confirmPassword ? "border-destructive pr-10" : "pr-10"}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        </div>
+                        {fieldErrors.confirmPassword && (
+                          <p className="text-sm text-destructive">{fieldErrors.confirmPassword}</p>
+                        )}
+                      </div>
+                      <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating account...
+                          </>
+                        ) : (
+                          "Create Admin Account"
+                        )}
+                      </Button>
+                    </form>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
