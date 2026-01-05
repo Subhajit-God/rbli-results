@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, Edit, Trash2, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -16,13 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,18 +44,14 @@ const ExamsSection = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [formData, setFormData] = useState({
-    name: "",
     academic_year: new Date().getFullYear().toString(),
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const { toast } = useToast();
 
-  const examNames = [
-    "1st Summative Evaluation",
-    "2nd Summative Evaluation",
-    "3rd Summative Evaluation",
-  ];
+  // Fixed exam name - Summative Evaluation only
+  const EXAM_NAME = "Summative Evaluation";
 
   useEffect(() => {
     fetchExams();
@@ -92,13 +82,11 @@ const ExamsSection = () => {
     if (exam) {
       setSelectedExam(exam);
       setFormData({
-        name: exam.name,
         academic_year: exam.academic_year,
       });
     } else {
       setSelectedExam(null);
       setFormData({
-        name: "",
         academic_year: new Date().getFullYear().toString(),
       });
     }
@@ -109,8 +97,15 @@ const ExamsSection = () => {
   const handleSubmit = async () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name) newErrors.name = "Exam name is required";
     if (!formData.academic_year) newErrors.academic_year = "Academic year is required";
+
+    // Check for existing exam with same year (only for new exams)
+    if (!selectedExam) {
+      const existingExam = exams.find(e => e.academic_year === formData.academic_year);
+      if (existingExam) {
+        newErrors.academic_year = `An exam for ${formData.academic_year} already exists`;
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -122,7 +117,7 @@ const ExamsSection = () => {
         const { error } = await supabase
           .from('exams')
           .update({
-            name: formData.name,
+            name: EXAM_NAME,
             academic_year: formData.academic_year,
           })
           .eq('id', selectedExam.id);
@@ -133,7 +128,7 @@ const ExamsSection = () => {
         const { error } = await supabase
           .from('exams')
           .insert({
-            name: formData.name,
+            name: EXAM_NAME,
             academic_year: formData.academic_year,
           });
 
@@ -180,20 +175,29 @@ const ExamsSection = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Examinations</h2>
-          <p className="text-muted-foreground">Create and manage summative evaluations</p>
+          <h2 className="text-2xl font-bold">Summative Evaluation</h2>
+          <p className="text-muted-foreground">Create and manage academic year evaluations</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
           <Plus className="mr-2 h-4 w-4" /> Create Exam
         </Button>
       </div>
 
+      <Alert className="border-primary/30 bg-primary/5">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertDescription>
+          Each academic year has one Summative Evaluation containing three parts: 
+          <strong> Summative I</strong>, <strong>Summative II</strong>, and <strong>Summative III</strong>.
+          Marks for all three are entered subject-wise.
+        </AlertDescription>
+      </Alert>
+
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Loading...</div>
       ) : exams.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No examinations created yet. Click "Create Exam" to get started.
+            No evaluations created yet. Click "Create Exam" to get started with the current academic year.
           </CardContent>
         </Card>
       ) : (
@@ -210,7 +214,7 @@ const ExamsSection = () => {
                     </CardDescription>
                   </div>
                   <Badge variant={exam.is_deployed ? "default" : "secondary"}>
-                    {exam.is_deployed ? "Deployed" : "Draft"}
+                    {exam.is_deployed ? "Published" : "Draft"}
                   </Badge>
                 </div>
               </CardHeader>
@@ -238,7 +242,7 @@ const ExamsSection = () => {
                 </div>
                 {exam.is_deployed && exam.deployed_at && (
                   <p className="text-xs text-muted-foreground mt-3">
-                    Deployed on {format(new Date(exam.deployed_at), "dd MMM yyyy, hh:mm a")}
+                    Published on {format(new Date(exam.deployed_at), "dd MMM yyyy, hh:mm a")}
                   </p>
                 )}
               </CardContent>
@@ -255,29 +259,21 @@ const ExamsSection = () => {
               {selectedExam ? "Edit Examination" : "Create New Examination"}
             </DialogTitle>
             <DialogDescription>
-              Configure examination details
+              Set the academic year for the Summative Evaluation
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Examination Name *</Label>
-              <Select
-                value={formData.name}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, name: v }))}
-              >
-                <SelectTrigger className={errors.name ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select examination" />
-                </SelectTrigger>
-                <SelectContent>
-                  {examNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.name && <p className="text-sm text-destructive mt-1">{errors.name}</p>}
+              <Label>Examination Name</Label>
+              <Input
+                value={EXAM_NAME}
+                disabled
+                className="bg-muted"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                The examination name is fixed as "Summative Evaluation"
+              </p>
             </div>
 
             <div>
@@ -310,7 +306,8 @@ const ExamsSection = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Examination</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedExam?.name}"? This will also delete all associated marks and ranks.
+              Are you sure you want to delete the Summative Evaluation for {selectedExam?.academic_year}? 
+              This will also delete all associated marks and ranks.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

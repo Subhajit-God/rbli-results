@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Trash2, History } from "lucide-react";
+import { AlertTriangle, Trash2, History, UserX, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,11 +22,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const SettingsSection = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [showDeleteAdminDialog, setShowDeleteAdminDialog] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [resetCheckbox, setResetCheckbox] = useState(false);
+  const [deleteAdminPassword, setDeleteAdminPassword] = useState("");
+  const [deleteAdminConfirmText, setDeleteAdminConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
   const [resetError, setResetError] = useState("");
+  const [deleteAdminError, setDeleteAdminError] = useState("");
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,6 +40,10 @@ const SettingsSection = () => {
     resetPassword.length >= 6 && 
     resetConfirmText === "RESET DATABASE" && 
     resetCheckbox;
+
+  const canDeleteAdmin = 
+    deleteAdminPassword.length >= 6 && 
+    deleteAdminConfirmText === "DELETE ADMIN";
 
   const handleReset = async () => {
     setResetError("");
@@ -83,6 +92,51 @@ const SettingsSection = () => {
     }
   };
 
+  const handleDeleteAdminAccount = async () => {
+    setDeleteAdminError("");
+    setIsDeletingAdmin(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Re-authenticate to verify password
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user.email!,
+        password: deleteAdminPassword,
+      });
+
+      if (authError) {
+        setDeleteAdminError("Incorrect password. Please try again.");
+        setIsDeletingAdmin(false);
+        return;
+      }
+
+      // Delete admin role only (keep all data intact)
+      const { error: deleteError } = await supabase
+        .from('admin_roles')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      // Sign out
+      await supabase.auth.signOut();
+
+      toast({
+        title: "Admin Account Deleted",
+        description: "Your admin account has been removed. A new admin can now register.",
+      });
+
+      // Redirect to auth page where registration will be available
+      navigate('/admin/auth');
+    } catch (error: any) {
+      setDeleteAdminError(error.message || "Failed to delete admin account");
+    } finally {
+      setIsDeletingAdmin(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -108,7 +162,7 @@ const SettingsSection = () => {
         </CardContent>
       </Card>
 
-      {/* Database Reset */}
+      {/* Danger Zone */}
       <Card className="border-destructive/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
@@ -116,26 +170,141 @@ const SettingsSection = () => {
             Danger Zone
           </CardTitle>
           <CardDescription>
-            Irreversible actions that affect your entire database
+            Irreversible actions that affect your account and database
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Resetting the database will permanently delete ALL data including students, subjects, exams, marks, results, ranks, configurations, and your admin account. This action cannot be undone.
-            </AlertDescription>
-          </Alert>
+        <CardContent className="space-y-6">
+          {/* Delete Admin Account */}
+          <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+            <div className="flex items-start gap-4">
+              <div className="p-2 rounded-full bg-destructive/10">
+                <UserX className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-foreground">Delete My Admin Account</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Remove your admin account while keeping all data intact. This allows a new administrator to register.
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="mt-3 border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                  onClick={() => setShowDeleteAdminDialog(true)}
+                >
+                  <UserX className="mr-2 h-4 w-4" />
+                  Delete My Admin Account
+                </Button>
+              </div>
+            </div>
+          </div>
 
-          <Button 
-            variant="destructive" 
-            onClick={() => setShowResetDialog(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Reset the Database
-          </Button>
+          {/* Full Database Reset */}
+          <div className="p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+            <div className="flex items-start gap-4">
+              <div className="p-2 rounded-full bg-destructive/10">
+                <Trash2 className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-foreground">Reset the Database</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Permanently delete ALL data including students, subjects, exams, marks, results, ranks, and your admin account.
+                </p>
+                <Alert variant="destructive" className="mt-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    This action cannot be undone. All data will be permanently deleted.
+                  </AlertDescription>
+                </Alert>
+                <Button 
+                  variant="destructive" 
+                  className="mt-3"
+                  onClick={() => setShowResetDialog(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Reset the Database
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Delete Admin Confirmation Dialog */}
+      <AlertDialog open={showDeleteAdminDialog} onOpenChange={setShowDeleteAdminDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <UserX className="h-5 w-5" />
+              Delete Admin Account
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>This will permanently remove your admin account.</p>
+              <p className="font-medium">What will happen:</p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                <li>Your admin role will be removed</li>
+                <li>You will be logged out immediately</li>
+                <li>Registration will be re-enabled for a new admin</li>
+                <li><strong>All data (students, marks, subjects) will remain intact</strong></li>
+              </ul>
+              <p className="text-warning-foreground font-semibold">
+                This action is permanent and cannot be undone!
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-4 py-4">
+            {deleteAdminError && (
+              <Alert variant="destructive">
+                <AlertDescription>{deleteAdminError}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="delete-admin-password">Enter your password to confirm</Label>
+              <Input
+                id="delete-admin-password"
+                type="password"
+                value={deleteAdminPassword}
+                onChange={(e) => setDeleteAdminPassword(e.target.value)}
+                placeholder="Your password"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="delete-admin-confirm">Type "DELETE ADMIN" to confirm</Label>
+              <Input
+                id="delete-admin-confirm"
+                value={deleteAdminConfirmText}
+                onChange={(e) => setDeleteAdminConfirmText(e.target.value.toUpperCase())}
+                placeholder="DELETE ADMIN"
+              />
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setDeleteAdminPassword("");
+              setDeleteAdminConfirmText("");
+              setDeleteAdminError("");
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAdminAccount}
+              disabled={!canDeleteAdmin || isDeletingAdmin}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingAdmin ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete My Admin Account"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Reset Confirmation Dialog */}
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
@@ -220,7 +389,14 @@ const SettingsSection = () => {
               disabled={!canReset || isResetting}
               className="bg-destructive text-destructive-foreground"
             >
-              {isResetting ? "Resetting..." : "Reset Everything"}
+              {isResetting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                "Reset Everything"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

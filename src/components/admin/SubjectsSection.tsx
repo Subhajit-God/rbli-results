@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import InitializeSubjectsButton from "./InitializeSubjectsButton";
 
 interface Subject {
   id: string;
@@ -56,7 +58,9 @@ const SubjectsSection = () => {
   const [selectedClass, setSelectedClass] = useState("5");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showFullMarksWarning, setShowFullMarksWarning] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [hasExistingMarks, setHasExistingMarks] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     class_number: "5",
@@ -98,7 +102,16 @@ const SubjectsSection = () => {
     return subjects.filter(s => s.class_number.toString() === classNum);
   };
 
-  const handleOpenDialog = (subject?: Subject) => {
+  const checkExistingMarks = async (subjectId: string) => {
+    const { count } = await supabase
+      .from('marks')
+      .select('*', { count: 'exact', head: true })
+      .eq('subject_id', subjectId);
+    
+    return (count ?? 0) > 0;
+  };
+
+  const handleOpenDialog = async (subject?: Subject) => {
     if (subject) {
       setSelectedSubject(subject);
       setFormData({
@@ -108,8 +121,13 @@ const SubjectsSection = () => {
         full_marks_2: subject.full_marks_2.toString(),
         full_marks_3: subject.full_marks_3.toString(),
       });
+      
+      // Check if marks exist for this subject
+      const marksExist = await checkExistingMarks(subject.id);
+      setHasExistingMarks(marksExist);
     } else {
       setSelectedSubject(null);
+      setHasExistingMarks(false);
       setFormData({
         name: "",
         class_number: selectedClass,
@@ -139,6 +157,19 @@ const SubjectsSection = () => {
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
+    }
+
+    // Check if editing full marks when marks exist
+    if (selectedSubject && hasExistingMarks) {
+      const fullMarksChanged = 
+        parseInt(formData.full_marks_1) !== selectedSubject.full_marks_1 ||
+        parseInt(formData.full_marks_2) !== selectedSubject.full_marks_2 ||
+        parseInt(formData.full_marks_3) !== selectedSubject.full_marks_3;
+      
+      if (fullMarksChanged && !showFullMarksWarning) {
+        setShowFullMarksWarning(true);
+        return;
+      }
     }
 
     try {
@@ -178,6 +209,7 @@ const SubjectsSection = () => {
       }
 
       setIsDialogOpen(false);
+      setShowFullMarksWarning(false);
       fetchSubjects();
     } catch (error: any) {
       toast({
@@ -214,15 +246,30 @@ const SubjectsSection = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold">Subjects</h2>
           <p className="text-muted-foreground">Configure subjects and full marks for each class</p>
         </div>
-        <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Add Subject
-        </Button>
+        <div className="flex gap-2">
+          <InitializeSubjectsButton 
+            onComplete={fetchSubjects} 
+            existingSubjectsCount={subjects.length}
+          />
+          <Button onClick={() => handleOpenDialog()}>
+            <Plus className="mr-2 h-4 w-4" /> Add Subject
+          </Button>
+        </div>
       </div>
+
+      {subjects.length === 0 && !isLoading && (
+        <Alert className="border-primary/30 bg-primary/5">
+          <AlertTriangle className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            No subjects configured yet. Use the "Initialize Default Subjects" button to quickly add the curriculum subjects for all classes, or add subjects manually.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs value={selectedClass} onValueChange={setSelectedClass}>
         <TabsList>
@@ -239,7 +286,7 @@ const SubjectsSection = () => {
               <CardHeader>
                 <CardTitle>Class {classNum} Subjects</CardTitle>
                 <CardDescription>
-                  Subjects and their full marks for Class {classNum}
+                  Subjects and their full marks for Summative Evaluation
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -247,7 +294,7 @@ const SubjectsSection = () => {
                   <div className="text-center py-8 text-muted-foreground">Loading...</div>
                 ) : getSubjectsByClass(classNum).length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    No subjects added for Class {classNum}. Click "Add Subject" to get started.
+                    No subjects added for Class {classNum}. Click "Add Subject" or "Initialize Default Subjects" to get started.
                   </div>
                 ) : (
                   <Table>
@@ -304,16 +351,28 @@ const SubjectsSection = () => {
       </Tabs>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) setShowFullMarksWarning(false);
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {selectedSubject ? "Edit Subject" : "Add New Subject"}
             </DialogTitle>
             <DialogDescription>
-              Configure subject name and full marks
+              Configure subject name and full marks for Summative Evaluation
             </DialogDescription>
           </DialogHeader>
+
+          {showFullMarksWarning && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Warning:</strong> Marks have already been entered for this subject. Changing full marks may cause existing marks to exceed the new limit. Are you sure you want to proceed?
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="space-y-4">
             <div>
@@ -349,7 +408,7 @@ const SubjectsSection = () => {
 
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="fm1">I Full Marks *</Label>
+                <Label htmlFor="fm1">Summative I (FM) *</Label>
                 <Input
                   id="fm1"
                   type="number"
@@ -360,7 +419,7 @@ const SubjectsSection = () => {
                 {errors.full_marks_1 && <p className="text-sm text-destructive mt-1">{errors.full_marks_1}</p>}
               </div>
               <div>
-                <Label htmlFor="fm2">II Full Marks *</Label>
+                <Label htmlFor="fm2">Summative II (FM) *</Label>
                 <Input
                   id="fm2"
                   type="number"
@@ -371,7 +430,7 @@ const SubjectsSection = () => {
                 {errors.full_marks_2 && <p className="text-sm text-destructive mt-1">{errors.full_marks_2}</p>}
               </div>
               <div>
-                <Label htmlFor="fm3">III Full Marks *</Label>
+                <Label htmlFor="fm3">Summative III (FM) *</Label>
                 <Input
                   id="fm3"
                   type="number"
@@ -385,11 +444,14 @@ const SubjectsSection = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsDialogOpen(false);
+              setShowFullMarksWarning(false);
+            }}>
               Cancel
             </Button>
             <Button onClick={handleSubmit}>
-              {selectedSubject ? "Update" : "Add"} Subject
+              {showFullMarksWarning ? "Confirm Changes" : (selectedSubject ? "Update" : "Add")} Subject
             </Button>
           </DialogFooter>
         </DialogContent>
