@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Edit, Trash2, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, AlertTriangle, GripVertical, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import InitializeSubjectsButton from "./InitializeSubjectsButton";
 
 interface Subject {
@@ -59,8 +60,10 @@ const SubjectsSection = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showFullMarksWarning, setShowFullMarksWarning] = useState(false);
+  const [showDeleteMarksWarning, setShowDeleteMarksWarning] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [hasExistingMarks, setHasExistingMarks] = useState(false);
+  const [isDeploymentActive, setIsDeploymentActive] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     class_number: "5",
@@ -74,7 +77,17 @@ const SubjectsSection = () => {
 
   useEffect(() => {
     fetchSubjects();
+    checkDeploymentStatus();
   }, []);
+
+  const checkDeploymentStatus = async () => {
+    const { data } = await supabase
+      .from('exams')
+      .select('is_deployed')
+      .eq('is_deployed', true)
+      .limit(1);
+    setIsDeploymentActive((data?.length || 0) > 0);
+  };
 
   const fetchSubjects = async () => {
     setIsLoading(true);
@@ -109,6 +122,17 @@ const SubjectsSection = () => {
       .eq('subject_id', subjectId);
     
     return (count ?? 0) > 0;
+  };
+
+  const logActivity = async (action: string, details: object) => {
+    try {
+      await supabase.from('activity_logs').insert([{
+        action,
+        details: details as any,
+      }]);
+    } catch (error) {
+      console.error('Failed to log activity:', error);
+    }
   };
 
   const handleOpenDialog = async (subject?: Subject) => {
@@ -186,9 +210,18 @@ const SubjectsSection = () => {
           .eq('id', selectedSubject.id);
 
         if (error) throw error;
+
+        await logActivity('SUBJECT_UPDATED', {
+          subject_id: selectedSubject.id,
+          old_name: selectedSubject.name,
+          new_name: formData.name.trim(),
+          class: formData.class_number,
+          full_marks_changed: showFullMarksWarning,
+        });
+
         toast({ title: "Success", description: "Subject updated successfully" });
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('subjects')
           .insert({
             name: formData.name.trim(),
@@ -196,7 +229,9 @@ const SubjectsSection = () => {
             full_marks_1: parseInt(formData.full_marks_1),
             full_marks_2: parseInt(formData.full_marks_2),
             full_marks_3: parseInt(formData.full_marks_3),
-          });
+          })
+          .select()
+          .single();
 
         if (error) {
           if (error.code === '23505') {
@@ -205,6 +240,13 @@ const SubjectsSection = () => {
           }
           throw error;
         }
+
+        await logActivity('SUBJECT_ADDED', {
+          subject_id: data.id,
+          name: formData.name.trim(),
+          class: formData.class_number,
+        });
+
         toast({ title: "Success", description: "Subject added successfully" });
       }
 
@@ -220,6 +262,20 @@ const SubjectsSection = () => {
     }
   };
 
+  const handleDeleteClick = async (subject: Subject) => {
+    setSelectedSubject(subject);
+    
+    // Check if marks exist
+    const marksExist = await checkExistingMarks(subject.id);
+    setHasExistingMarks(marksExist);
+    
+    if (marksExist) {
+      setShowDeleteMarksWarning(true);
+    } else {
+      setIsDeleteDialogOpen(true);
+    }
+  };
+
   const handleDelete = async () => {
     if (!selectedSubject) return;
 
@@ -230,9 +286,17 @@ const SubjectsSection = () => {
         .eq('id', selectedSubject.id);
 
       if (error) throw error;
+
+      await logActivity('SUBJECT_DELETED', {
+        subject_id: selectedSubject.id,
+        name: selectedSubject.name,
+        class: selectedSubject.class_number,
+        had_marks: hasExistingMarks,
+      });
       
       toast({ title: "Deleted", description: "Subject deleted successfully" });
       setIsDeleteDialogOpen(false);
+      setShowDeleteMarksWarning(false);
       setSelectedSubject(null);
       fetchSubjects();
     } catch (error: any) {
@@ -251,16 +315,25 @@ const SubjectsSection = () => {
           <h2 className="text-2xl font-bold">Subjects</h2>
           <p className="text-muted-foreground">Configure subjects and full marks for each class</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <InitializeSubjectsButton 
             onComplete={fetchSubjects} 
             existingSubjectsCount={subjects.length}
           />
-          <Button onClick={() => handleOpenDialog()}>
+          <Button onClick={() => handleOpenDialog()} disabled={isDeploymentActive}>
             <Plus className="mr-2 h-4 w-4" /> Add Subject
           </Button>
         </div>
       </div>
+
+      {isDeploymentActive && (
+        <Alert className="border-warning/50 bg-warning/10">
+          <Lock className="h-4 w-4 text-warning" />
+          <AlertDescription className="text-warning-foreground">
+            Subject changes are blocked while results are deployed. Rollback the deployment first to make changes.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {subjects.length === 0 && !isLoading && (
         <Alert className="border-primary/30 bg-primary/5">
@@ -324,16 +397,15 @@ const SubjectsSection = () => {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => handleOpenDialog(subject)}
+                                disabled={isDeploymentActive}
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => {
-                                  setSelectedSubject(subject);
-                                  setIsDeleteDialogOpen(true);
-                                }}
+                                onClick={() => handleDeleteClick(subject)}
+                                disabled={isDeploymentActive}
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -457,19 +529,45 @@ const SubjectsSection = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation (No Marks) */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Subject</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedSubject?.name}"? This will also delete all marks associated with this subject.
+              Are you sure you want to delete "{selectedSubject?.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Warning (Has Marks) */}
+      <AlertDialog open={showDeleteMarksWarning} onOpenChange={setShowDeleteMarksWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Warning: Marks Exist
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                <strong>Marks have been entered for "{selectedSubject?.name}".</strong>
+              </p>
+              <p>
+                Deleting this subject will also permanently delete all associated marks data. This action cannot be undone.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+              Delete Subject & Marks
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

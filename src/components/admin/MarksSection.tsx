@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Lock, Unlock, AlertTriangle, AlertCircle } from "lucide-react";
+import { Save, Lock, Unlock, AlertTriangle, AlertCircle, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MarksExcelImport from "./MarksExcelImport";
 
 interface Exam {
   id: string;
@@ -59,6 +61,8 @@ interface Mark {
   is_locked: boolean;
 }
 
+type MarkField = 'marks_1' | 'marks_2' | 'marks_3';
+
 const MarksSection = () => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -69,16 +73,22 @@ const MarksSection = () => {
   const [selectedExam, setSelectedExam] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<string>("5");
   const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [activeMarkField, setActiveMarkField] = useState<MarkField>("marks_1");
   const [editedMarks, setEditedMarks] = useState<Record<string, { marks_1: string; marks_2: string; marks_3: string }>>({});
   const [markErrors, setMarkErrors] = useState<Record<string, { marks_1?: string; marks_2?: string; marks_3?: string }>>({});
   const [isLocked, setIsLocked] = useState(false);
+  const [isDeploymentActive, setIsDeploymentActive] = useState(false);
+  const [showExcelImport, setShowExcelImport] = useState(false);
+  const [focusedCell, setFocusedCell] = useState<{ studentId: string; field: MarkField } | null>(null);
   
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const { toast } = useToast();
 
   useEffect(() => {
     fetchExams();
     fetchSubjects();
     fetchStudents();
+    checkDeploymentStatus();
   }, []);
 
   useEffect(() => {
@@ -86,6 +96,15 @@ const MarksSection = () => {
       fetchMarks();
     }
   }, [selectedExam, selectedSubject]);
+
+  const checkDeploymentStatus = async () => {
+    const { data } = await supabase
+      .from('exams')
+      .select('is_deployed')
+      .eq('is_deployed', true)
+      .limit(1);
+    setIsDeploymentActive((data?.length || 0) > 0);
+  };
 
   const fetchExams = async () => {
     const { data, error } = await supabase
@@ -149,6 +168,7 @@ const MarksSection = () => {
   const filteredSubjects = subjects.filter(s => s.class_number.toString() === selectedClass);
   const filteredStudents = students.filter(s => s.class_number.toString() === selectedClass);
   const currentSubject = subjects.find(s => s.id === selectedSubject);
+  const currentExam = exams.find(e => e.id === selectedExam);
 
   // Check if full marks are configured
   const isFullMarksConfigured = currentSubject && 
@@ -156,14 +176,50 @@ const MarksSection = () => {
     currentSubject.full_marks_2 > 0 && 
     currentSubject.full_marks_3 > 0;
 
-  const getFullMarksForField = (field: 'marks_1' | 'marks_2' | 'marks_3'): number => {
+  const getFullMarksForField = (field: MarkField): number => {
     if (!currentSubject) return 0;
     if (field === 'marks_1') return currentSubject.full_marks_1;
     if (field === 'marks_2') return currentSubject.full_marks_2;
     return currentSubject.full_marks_3;
   };
 
-  const handleMarkChange = (studentId: string, field: 'marks_1' | 'marks_2' | 'marks_3', value: string) => {
+  const getFieldLabel = (field: MarkField): string => {
+    if (field === 'marks_1') return 'Summative I';
+    if (field === 'marks_2') return 'Summative II';
+    return 'Summative III';
+  };
+
+  // Auto-save when moving away from a cell
+  const autoSaveMarks = useCallback(async () => {
+    if (!selectedExam || !selectedSubject || isLocked) return;
+    
+    // Don't save if there are validation errors
+    if (hasValidationErrors()) return;
+
+    try {
+      const upserts = filteredStudents
+        .filter(student => editedMarks[student.id])
+        .map(student => ({
+          student_id: student.id,
+          subject_id: selectedSubject,
+          exam_id: selectedExam,
+          marks_1: editedMarks[student.id]?.marks_1 || null,
+          marks_2: editedMarks[student.id]?.marks_2 || null,
+          marks_3: editedMarks[student.id]?.marks_3 || null,
+          is_locked: isLocked,
+        }));
+
+      if (upserts.length > 0) {
+        await supabase
+          .from('marks')
+          .upsert(upserts, { onConflict: 'student_id,subject_id,exam_id' });
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  }, [selectedExam, selectedSubject, filteredStudents, editedMarks, isLocked]);
+
+  const handleMarkChange = (studentId: string, field: MarkField, value: string) => {
     // Validate: only numbers, AB, or EX
     const upperValue = value.toUpperCase();
     if (value && !['AB', 'EX'].includes(upperValue) && isNaN(parseFloat(value))) {
@@ -217,6 +273,102 @@ const MarksSection = () => {
     );
   };
 
+  // Keyboard navigation handler
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    studentId: string,
+    field: MarkField,
+    studentIndex: number
+  ) => {
+    const studentIds = filteredStudents.map(s => s.id);
+    const fields: MarkField[] = ['marks_1', 'marks_2', 'marks_3'];
+    const fieldIndex = fields.indexOf(field);
+
+    let nextStudentId: string | null = null;
+    let nextField: MarkField | null = null;
+
+    switch (e.key) {
+      case 'Enter':
+      case 'ArrowDown':
+        e.preventDefault();
+        // Move to same field, next student
+        if (studentIndex < studentIds.length - 1) {
+          nextStudentId = studentIds[studentIndex + 1];
+          nextField = field;
+        }
+        break;
+      
+      case 'ArrowUp':
+        e.preventDefault();
+        // Move to same field, previous student
+        if (studentIndex > 0) {
+          nextStudentId = studentIds[studentIndex - 1];
+          nextField = field;
+        }
+        break;
+      
+      case 'ArrowRight':
+        e.preventDefault();
+        // Move to next field, same student
+        if (fieldIndex < fields.length - 1) {
+          nextStudentId = studentId;
+          nextField = fields[fieldIndex + 1];
+        }
+        break;
+      
+      case 'ArrowLeft':
+        e.preventDefault();
+        // Move to previous field, same student
+        if (fieldIndex > 0) {
+          nextStudentId = studentId;
+          nextField = fields[fieldIndex - 1];
+        }
+        break;
+      
+      case 'Tab':
+        // Let default tab behavior work, but trigger auto-save
+        autoSaveMarks();
+        return;
+      
+      default:
+        return;
+    }
+
+    if (nextStudentId && nextField) {
+      autoSaveMarks();
+      const refKey = `${nextStudentId}-${nextField}`;
+      const nextInput = inputRefs.current.get(refKey);
+      if (nextInput) {
+        nextInput.focus();
+        nextInput.select();
+        setFocusedCell({ studentId: nextStudentId, field: nextField });
+      }
+    }
+  };
+
+  const handleFocus = (studentId: string, field: MarkField) => {
+    setFocusedCell({ studentId, field });
+    // Select all text when focusing
+    const refKey = `${studentId}-${field}`;
+    const input = inputRefs.current.get(refKey);
+    if (input) {
+      input.select();
+    }
+  };
+
+  const handleBlur = () => {
+    autoSaveMarks();
+  };
+
+  const setInputRef = (studentId: string, field: MarkField, el: HTMLInputElement | null) => {
+    const refKey = `${studentId}-${field}`;
+    if (el) {
+      inputRefs.current.set(refKey, el);
+    } else {
+      inputRefs.current.delete(refKey);
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedExam || !selectedSubject) return;
 
@@ -237,6 +389,17 @@ const MarksSection = () => {
         .upsert(upserts, { onConflict: 'student_id,subject_id,exam_id' });
 
       if (error) throw error;
+
+      // Log activity
+      await supabase.from('activity_logs').insert({
+        action: 'MARKS_SAVED',
+        details: {
+          exam_id: selectedExam,
+          subject_id: selectedSubject,
+          class: selectedClass,
+          count: upserts.length,
+        },
+      });
       
       toast({ title: "Saved", description: "Marks saved successfully" });
       fetchMarks();
@@ -262,6 +425,16 @@ const MarksSection = () => {
         .eq('subject_id', selectedSubject);
 
       if (error) throw error;
+
+      // Log activity
+      await supabase.from('activity_logs').insert({
+        action: isLocked ? 'MARKS_UNLOCKED' : 'MARKS_LOCKED',
+        details: {
+          exam_id: selectedExam,
+          subject_id: selectedSubject,
+          class: selectedClass,
+        },
+      });
       
       setIsLocked(!isLocked);
       toast({ 
@@ -283,6 +456,13 @@ const MarksSection = () => {
         <h2 className="text-2xl font-bold">Marks Entry</h2>
         <p className="text-muted-foreground">Enter marks for students subject-wise (Summative Evaluation)</p>
       </div>
+
+      {/* Keyboard Shortcuts Help */}
+      <Alert className="bg-muted/50 border-muted">
+        <AlertDescription className="text-sm">
+          <strong>Keyboard Shortcuts:</strong> Use <kbd className="px-1.5 py-0.5 bg-background border rounded text-xs">Enter</kbd> or <kbd className="px-1.5 py-0.5 bg-background border rounded text-xs">↓</kbd> to move down, <kbd className="px-1.5 py-0.5 bg-background border rounded text-xs">↑</kbd> to move up, <kbd className="px-1.5 py-0.5 bg-background border rounded text-xs">→</kbd> / <kbd className="px-1.5 py-0.5 bg-background border rounded text-xs">←</kbd> to switch columns. Data auto-saves when you move.
+        </AlertDescription>
+      </Alert>
 
       {/* Selection Controls */}
       <Card>
@@ -347,18 +527,28 @@ const MarksSection = () => {
               </Select>
             </div>
 
-            <div className="flex items-end gap-2">
+            <div className="flex items-end gap-2 flex-wrap">
               <Button 
                 onClick={handleSave} 
                 disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
               >
                 <Save className="mr-2 h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Marks"}
+                {isSaving ? "Saving..." : "Save"}
               </Button>
               {Object.keys(marks).length > 0 && (
                 <Button variant="outline" onClick={handleToggleLock}>
                   {isLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
                   {isLocked ? "Unlock" : "Lock"}
+                </Button>
+              )}
+              {selectedExam && selectedSubject && currentSubject && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowExcelImport(true)}
+                  disabled={isLocked || isDeploymentActive}
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Excel
                 </Button>
               )}
             </div>
@@ -380,7 +570,7 @@ const MarksSection = () => {
       {selectedExam && selectedSubject && currentSubject ? (
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-wrap gap-2">
               <div>
                 <CardTitle>{currentSubject.name} - Class {selectedClass}</CardTitle>
                 <CardDescription>
@@ -414,16 +604,16 @@ const MarksSection = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Roll</TableHead>
-                      <TableHead>Student Name</TableHead>
-                      <TableHead className="text-center">I (FM: {currentSubject.full_marks_1})</TableHead>
-                      <TableHead className="text-center">II (FM: {currentSubject.full_marks_2})</TableHead>
-                      <TableHead className="text-center">III (FM: {currentSubject.full_marks_3})</TableHead>
-                      <TableHead className="text-center">Total</TableHead>
+                      <TableHead className="w-16">Roll</TableHead>
+                      <TableHead className="min-w-[150px]">Student Name</TableHead>
+                      <TableHead className="text-center w-28">I (FM: {currentSubject.full_marks_1})</TableHead>
+                      <TableHead className="text-center w-28">II (FM: {currentSubject.full_marks_2})</TableHead>
+                      <TableHead className="text-center w-28">III (FM: {currentSubject.full_marks_3})</TableHead>
+                      <TableHead className="text-center w-24">Total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStudents.map(student => {
+                    {filteredStudents.map((student, index) => {
                       const studentMarks = editedMarks[student.id] || { marks_1: '', marks_2: '', marks_3: '' };
                       const m1 = ['AB', 'EX'].includes(studentMarks.marks_1.toUpperCase()) ? 0 : parseFloat(studentMarks.marks_1) || 0;
                       const m2 = ['AB', 'EX'].includes(studentMarks.marks_2.toUpperCase()) ? 0 : parseFloat(studentMarks.marks_2) || 0;
@@ -432,56 +622,37 @@ const MarksSection = () => {
 
                       return (
                         <TableRow key={student.id}>
-                          <TableCell>{student.roll_number}</TableCell>
+                          <TableCell className="font-medium">{student.roll_number}</TableCell>
                           <TableCell className="font-medium">{student.name}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col items-center">
-                              <Input
-                                className={`w-20 text-center mx-auto ${markErrors[student.id]?.marks_1 ? 'border-destructive' : ''}`}
-                                value={studentMarks.marks_1}
-                                onChange={(e) => handleMarkChange(student.id, 'marks_1', e.target.value)}
-                                placeholder="—"
-                                disabled={isLocked || !isFullMarksConfigured}
-                                max={currentSubject.full_marks_1}
-                                min={0}
-                              />
-                              {markErrors[student.id]?.marks_1 && (
-                                <span className="text-xs text-destructive mt-1">{markErrors[student.id].marks_1}</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col items-center">
-                              <Input
-                                className={`w-20 text-center mx-auto ${markErrors[student.id]?.marks_2 ? 'border-destructive' : ''}`}
-                                value={studentMarks.marks_2}
-                                onChange={(e) => handleMarkChange(student.id, 'marks_2', e.target.value)}
-                                placeholder="—"
-                                disabled={isLocked || !isFullMarksConfigured}
-                                max={currentSubject.full_marks_2}
-                                min={0}
-                              />
-                              {markErrors[student.id]?.marks_2 && (
-                                <span className="text-xs text-destructive mt-1">{markErrors[student.id].marks_2}</span>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col items-center">
-                              <Input
-                                className={`w-20 text-center mx-auto ${markErrors[student.id]?.marks_3 ? 'border-destructive' : ''}`}
-                                value={studentMarks.marks_3}
-                                onChange={(e) => handleMarkChange(student.id, 'marks_3', e.target.value)}
-                                placeholder="—"
-                                disabled={isLocked || !isFullMarksConfigured}
-                                max={currentSubject.full_marks_3}
-                                min={0}
-                              />
-                              {markErrors[student.id]?.marks_3 && (
-                                <span className="text-xs text-destructive mt-1">{markErrors[student.id].marks_3}</span>
-                              )}
-                            </div>
-                          </TableCell>
+                          {(['marks_1', 'marks_2', 'marks_3'] as MarkField[]).map((field) => {
+                            const isFocused = focusedCell?.studentId === student.id && focusedCell?.field === field;
+                            return (
+                              <TableCell key={field}>
+                                <div className="flex flex-col items-center">
+                                  <Input
+                                    ref={(el) => setInputRef(student.id, field, el)}
+                                    className={`w-20 text-center mx-auto transition-all ${
+                                      markErrors[student.id]?.[field] 
+                                        ? 'border-destructive ring-1 ring-destructive' 
+                                        : isFocused 
+                                          ? 'border-primary ring-2 ring-primary/30' 
+                                          : ''
+                                    }`}
+                                    value={studentMarks[field]}
+                                    onChange={(e) => handleMarkChange(student.id, field, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(e, student.id, field, index)}
+                                    onFocus={() => handleFocus(student.id, field)}
+                                    onBlur={handleBlur}
+                                    placeholder="—"
+                                    disabled={isLocked || !isFullMarksConfigured}
+                                  />
+                                  {markErrors[student.id]?.[field] && (
+                                    <span className="text-xs text-destructive mt-1">{markErrors[student.id][field]}</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            );
+                          })}
                           <TableCell className="text-center font-semibold">
                             {total} / {currentSubject.full_marks_1 + currentSubject.full_marks_2 + currentSubject.full_marks_3}
                           </TableCell>
@@ -512,6 +683,25 @@ const MarksSection = () => {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Excel Import Dialog */}
+      {selectedExam && selectedSubject && currentSubject && currentExam && (
+        <MarksExcelImport
+          open={showExcelImport}
+          onOpenChange={setShowExcelImport}
+          onImportSuccess={() => fetchMarks()}
+          examId={selectedExam}
+          examName={`${currentExam.name} (${currentExam.academic_year})`}
+          classNumber={parseInt(selectedClass)}
+          subjectId={selectedSubject}
+          subjectName={currentSubject.name}
+          fullMarks1={currentSubject.full_marks_1}
+          fullMarks2={currentSubject.full_marks_2}
+          fullMarks3={currentSubject.full_marks_3}
+          markField={activeMarkField}
+          isDeploymentActive={isDeploymentActive}
+        />
       )}
     </div>
   );
