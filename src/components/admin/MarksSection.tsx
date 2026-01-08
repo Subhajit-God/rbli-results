@@ -25,6 +25,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarksExcelImport from "./MarksExcelImport";
+import { isAbsent, isExempt } from "@/components/AbsentBadge";
 
 interface Exam {
   id: string;
@@ -634,9 +635,13 @@ const MarksSection = () => {
                                     className={`w-20 text-center mx-auto transition-all ${
                                       markErrors[student.id]?.[field] 
                                         ? 'border-destructive ring-1 ring-destructive' 
-                                        : isFocused 
-                                          ? 'border-primary ring-2 ring-primary/30' 
-                                          : ''
+                                        : isAbsent(studentMarks[field])
+                                          ? 'border-destructive/50 bg-destructive/10'
+                                          : isExempt(studentMarks[field])
+                                            ? 'border-muted bg-muted/30'
+                                            : isFocused 
+                                              ? 'border-primary ring-2 ring-primary/30' 
+                                              : ''
                                     }`}
                                     value={studentMarks[field]}
                                     onChange={(e) => handleMarkChange(student.id, field, e.target.value)}

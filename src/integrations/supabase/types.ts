@@ -297,6 +297,7 @@ export type Database = {
         Row: {
           class_number: number
           created_at: string
+          display_order: number | null
           full_marks_1: number
           full_marks_2: number
           full_marks_3: number
@@ -306,6 +307,7 @@ export type Database = {
         Insert: {
           class_number: number
           created_at?: string
+          display_order?: number | null
           full_marks_1?: number
           full_marks_2?: number
           full_marks_3?: number
@@ -315,6 +317,7 @@ export type Database = {
         Update: {
           class_number?: number
           created_at?: string
+          display_order?: number | null
           full_marks_1?: number
           full_marks_2?: number
           full_marks_3?: number
