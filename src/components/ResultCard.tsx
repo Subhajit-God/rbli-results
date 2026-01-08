@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
 import { AchievementsList } from "@/components/AchievementBadge";
-
+import { MarksDisplay, isAbsent, isExempt } from "@/components/AbsentBadge";
 interface StudentDetails {
   name: string;
   classNumber: number;
@@ -152,16 +152,40 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
                 >
                   <td className="p-3 font-medium border-t border-border">{row.subject}</td>
                   <td className="p-3 text-center border-t border-border">
-                    <span className="font-medium">{row.marks1}</span>
-                    <span className="text-muted-foreground text-xs ml-1">({row.fullMarks1})</span>
+                    {isAbsent(row.marks1) ? (
+                      <MarksDisplay value={row.marks1} size="sm" />
+                    ) : isExempt(row.marks1) ? (
+                      <MarksDisplay value={row.marks1} size="sm" />
+                    ) : (
+                      <>
+                        <span className="font-medium">{row.marks1}</span>
+                        <span className="text-muted-foreground text-xs ml-1">({row.fullMarks1})</span>
+                      </>
+                    )}
                   </td>
                   <td className="p-3 text-center border-t border-border">
-                    <span className="font-medium">{row.marks2}</span>
-                    <span className="text-muted-foreground text-xs ml-1">({row.fullMarks2})</span>
+                    {isAbsent(row.marks2) ? (
+                      <MarksDisplay value={row.marks2} size="sm" />
+                    ) : isExempt(row.marks2) ? (
+                      <MarksDisplay value={row.marks2} size="sm" />
+                    ) : (
+                      <>
+                        <span className="font-medium">{row.marks2}</span>
+                        <span className="text-muted-foreground text-xs ml-1">({row.fullMarks2})</span>
+                      </>
+                    )}
                   </td>
                   <td className="p-3 text-center border-t border-border">
-                    <span className="font-medium">{row.marks3}</span>
-                    <span className="text-muted-foreground text-xs ml-1">({row.fullMarks3})</span>
+                    {isAbsent(row.marks3) ? (
+                      <MarksDisplay value={row.marks3} size="sm" />
+                    ) : isExempt(row.marks3) ? (
+                      <MarksDisplay value={row.marks3} size="sm" />
+                    ) : (
+                      <>
+                        <span className="font-medium">{row.marks3}</span>
+                        <span className="text-muted-foreground text-xs ml-1">({row.fullMarks3})</span>
+                      </>
+                    )}
                   </td>
                   <td className="p-3 text-center border-t border-border font-bold text-primary">
                     {row.total}/{row.fullTotal}

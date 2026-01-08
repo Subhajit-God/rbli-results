@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { Plus, Edit, Trash2, AlertTriangle, GripVertical, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +44,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import InitializeSubjectsButton from "./InitializeSubjectsButton";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Subject {
   id: string;
@@ -51,7 +69,78 @@ interface Subject {
   full_marks_1: number;
   full_marks_2: number;
   full_marks_3: number;
+  display_order: number;
 }
+
+// Sortable row component for drag-and-drop
+interface SortableSubjectRowProps {
+  subject: Subject;
+  onEdit: () => void;
+  onDelete: () => void;
+  isDisabled: boolean;
+}
+
+const SortableSubjectRow = ({ subject, onEdit, onDelete, isDisabled }: SortableSubjectRowProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: subject.id, disabled: isDisabled });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style} className={isDragging ? 'bg-muted' : ''}>
+      <TableCell className="w-10">
+        <button
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted",
+            isDisabled && "cursor-not-allowed opacity-50"
+          )}
+          disabled={isDisabled}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell className="font-medium">{subject.name}</TableCell>
+      <TableCell className="text-center">{subject.full_marks_1}</TableCell>
+      <TableCell className="text-center">{subject.full_marks_2}</TableCell>
+      <TableCell className="text-center">{subject.full_marks_3}</TableCell>
+      <TableCell className="text-center font-semibold">
+        {subject.full_marks_1 + subject.full_marks_2 + subject.full_marks_3}
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onEdit}
+            disabled={isDisabled}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onDelete}
+            disabled={isDisabled}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 const SubjectsSection = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -96,10 +185,10 @@ const SubjectsSection = () => {
         .from('subjects')
         .select('*')
         .order('class_number')
-        .order('name');
+        .order('display_order');
       
       if (error) throw error;
-      setSubjects(data || []);
+      setSubjects((data || []).map(s => ({ ...s, display_order: s.display_order ?? 0 })));
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -112,7 +201,63 @@ const SubjectsSection = () => {
   };
 
   const getSubjectsByClass = (classNum: string) => {
-    return subjects.filter(s => s.class_number.toString() === classNum);
+    return subjects
+      .filter(s => s.class_number.toString() === classNum)
+      .sort((a, b) => a.display_order - b.display_order);
+  };
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent, classNum: string) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const classSubjects = getSubjectsByClass(classNum);
+    const oldIndex = classSubjects.findIndex(s => s.id === active.id);
+    const newIndex = classSubjects.findIndex(s => s.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(classSubjects, oldIndex, newIndex);
+    
+    // Update local state optimistically
+    const updatedSubjects = subjects.map(s => {
+      const reorderedIndex = reordered.findIndex(r => r.id === s.id);
+      if (reorderedIndex !== -1) {
+        return { ...s, display_order: reorderedIndex + 1 };
+      }
+      return s;
+    });
+    setSubjects(updatedSubjects);
+
+    // Update database
+    try {
+      const updates = reordered.map((subject, index) => ({
+        id: subject.id,
+        display_order: index + 1,
+      }));
+
+      for (const update of updates) {
+        await supabase
+          .from('subjects')
+          .update({ display_order: update.display_order })
+          .eq('id', update.id);
+      }
+
+      await logActivity('SUBJECTS_REORDERED', {
+        class: classNum,
+        new_order: reordered.map(s => s.name),
+      });
+
+      toast({ title: "Reordered", description: "Subject order updated" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to save order" });
+      fetchSubjects(); // Revert on failure
+    }
   };
 
   const checkExistingMarks = async (subjectId: string) => {
@@ -353,73 +498,66 @@ const SubjectsSection = () => {
           <TabsTrigger value="9">Class 9</TabsTrigger>
         </TabsList>
 
-        {["5", "6", "7", "8", "9"].map((classNum) => (
-          <TabsContent key={classNum} value={classNum}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Class {classNum} Subjects</CardTitle>
-                <CardDescription>
-                  Subjects and their full marks for Summative Evaluation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading...</div>
-                ) : getSubjectsByClass(classNum).length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No subjects added for Class {classNum}. Click "Add Subject" or "Initialize Default Subjects" to get started.
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Subject Name</TableHead>
-                        <TableHead className="text-center">I (FM)</TableHead>
-                        <TableHead className="text-center">II (FM)</TableHead>
-                        <TableHead className="text-center">III (FM)</TableHead>
-                        <TableHead className="text-center">Total FM</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {getSubjectsByClass(classNum).map((subject) => (
-                        <TableRow key={subject.id}>
-                          <TableCell className="font-medium">{subject.name}</TableCell>
-                          <TableCell className="text-center">{subject.full_marks_1}</TableCell>
-                          <TableCell className="text-center">{subject.full_marks_2}</TableCell>
-                          <TableCell className="text-center">{subject.full_marks_3}</TableCell>
-                          <TableCell className="text-center font-semibold">
-                            {subject.full_marks_1 + subject.full_marks_2 + subject.full_marks_3}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleOpenDialog(subject)}
-                                disabled={isDeploymentActive}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteClick(subject)}
-                                disabled={isDeploymentActive}
-                              >
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
+        {["5", "6", "7", "8", "9"].map((classNum) => {
+          const classSubjects = getSubjectsByClass(classNum);
+          return (
+            <TabsContent key={classNum} value={classNum}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Class {classNum} Subjects</CardTitle>
+                  <CardDescription>
+                    Subjects and their full marks for Summative Evaluation. Drag to reorder.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading...</div>
+                  ) : classSubjects.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No subjects added for Class {classNum}. Click "Add Subject" or "Initialize Default Subjects" to get started.
+                    </div>
+                  ) : (
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(e) => handleDragEnd(e, classNum)}
+                    >
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-10"></TableHead>
+                            <TableHead>Subject Name</TableHead>
+                            <TableHead className="text-center">I (FM)</TableHead>
+                            <TableHead className="text-center">II (FM)</TableHead>
+                            <TableHead className="text-center">III (FM)</TableHead>
+                            <TableHead className="text-center">Total FM</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <SortableContext
+                            items={classSubjects.map(s => s.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {classSubjects.map((subject) => (
+                              <SortableSubjectRow
+                                key={subject.id}
+                                subject={subject}
+                                onEdit={() => handleOpenDialog(subject)}
+                                onDelete={() => handleDeleteClick(subject)}
+                                isDisabled={isDeploymentActive}
+                              />
+                            ))}
+                          </SortableContext>
+                        </TableBody>
+                      </Table>
+                    </DndContext>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          );
+        })}
       </Tabs>
 
       {/* Add/Edit Dialog */}

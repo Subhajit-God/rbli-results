@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
+import { isAbsent, isExempt } from "@/components/AbsentBadge";
 
 interface StudentDetails {
   name: string;
@@ -114,13 +115,31 @@ const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps
             <tr key={index} className={index % 2 === 0 ? '' : 'bg-gray-50'}>
               <td className="border border-black p-2">{row.subject}</td>
               <td className="border border-black p-2 text-center">
-                {row.marks1} <span className="text-xs text-gray-600">({row.fullMarks1})</span>
+                {isAbsent(row.marks1) ? (
+                  <span className="bg-red-200 text-red-800 px-1.5 py-0.5 rounded text-xs font-bold">AB</span>
+                ) : isExempt(row.marks1) ? (
+                  <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-xs font-bold">EX</span>
+                ) : (
+                  <>{row.marks1} <span className="text-xs text-gray-600">({row.fullMarks1})</span></>
+                )}
               </td>
               <td className="border border-black p-2 text-center">
-                {row.marks2} <span className="text-xs text-gray-600">({row.fullMarks2})</span>
+                {isAbsent(row.marks2) ? (
+                  <span className="bg-red-200 text-red-800 px-1.5 py-0.5 rounded text-xs font-bold">AB</span>
+                ) : isExempt(row.marks2) ? (
+                  <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-xs font-bold">EX</span>
+                ) : (
+                  <>{row.marks2} <span className="text-xs text-gray-600">({row.fullMarks2})</span></>
+                )}
               </td>
               <td className="border border-black p-2 text-center">
-                {row.marks3} <span className="text-xs text-gray-600">({row.fullMarks3})</span>
+                {isAbsent(row.marks3) ? (
+                  <span className="bg-red-200 text-red-800 px-1.5 py-0.5 rounded text-xs font-bold">AB</span>
+                ) : isExempt(row.marks3) ? (
+                  <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-xs font-bold">EX</span>
+                ) : (
+                  <>{row.marks3} <span className="text-xs text-gray-600">({row.fullMarks3})</span></>
+                )}
               </td>
               <td className="border border-black p-2 text-center font-bold">
                 {row.total}/{row.fullTotal}
