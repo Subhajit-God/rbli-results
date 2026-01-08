@@ -699,7 +699,7 @@ const MarksSection = () => {
           fullMarks1={currentSubject.full_marks_1}
           fullMarks2={currentSubject.full_marks_2}
           fullMarks3={currentSubject.full_marks_3}
-          markField={activeMarkField}
+          initialMarkField={activeMarkField}
           isDeploymentActive={isDeploymentActive}
         />
       )}

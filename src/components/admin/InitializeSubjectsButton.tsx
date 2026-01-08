@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { PRESET_SUBJECTS, DEFAULT_FULL_MARKS } from "@/lib/presetSubjects";
+import { PRESET_SUBJECTS, getDefaultFullMarks } from "@/lib/presetSubjects";
 import { Button } from "@/components/ui/button";
 import { Wand2, Loader2 } from "lucide-react";
 import {
@@ -39,11 +39,13 @@ const InitializeSubjectsButton = ({ onComplete, existingSubjectsCount }: Initial
       }> = [];
 
       for (const [classNum, subjects] of Object.entries(PRESET_SUBJECTS)) {
+        const classNumber = parseInt(classNum);
+        const fullMarks = getDefaultFullMarks(classNumber);
         for (const subjectName of subjects) {
           subjectsToInsert.push({
             name: subjectName,
-            class_number: parseInt(classNum),
-            ...DEFAULT_FULL_MARKS
+            class_number: classNumber,
+            ...fullMarks
           });
         }
       }
@@ -112,7 +114,7 @@ const InitializeSubjectsButton = ({ onComplete, existingSubjectsCount }: Initial
                 <li><strong>Class 9:</strong> Bengali, English, Geography, Life and Physical Science, Maths, History</li>
               </ul>
               <p className="text-muted-foreground">
-                Default full marks: I = 30, II = 50, III = 20 (configurable after initialization)
+                Default full marks: I = 30, II = 50, III = 20 (Class 6-8: III = 70)
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
