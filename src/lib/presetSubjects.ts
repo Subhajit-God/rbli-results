@@ -50,9 +50,21 @@ export const PRESET_SUBJECTS: Record<number, string[]> = {
   ]
 };
 
-// Default full marks structure
+// Default full marks structure - Class 5 and 9 use standard values
 export const DEFAULT_FULL_MARKS = {
   full_marks_1: 30, // Summative I
   full_marks_2: 50, // Summative II  
   full_marks_3: 20  // Summative III
+};
+
+// Class 6, 7, 8 have different Summative III marks (70)
+export const getDefaultFullMarks = (classNumber: number) => {
+  if (classNumber >= 6 && classNumber <= 8) {
+    return {
+      full_marks_1: 30, // Summative I
+      full_marks_2: 50, // Summative II  
+      full_marks_3: 70  // Summative III for Class 6,7,8
+    };
+  }
+  return DEFAULT_FULL_MARKS;
 };
