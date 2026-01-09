@@ -243,53 +243,34 @@ const AdminAuth = () => {
 
   if (isCheckingAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-3xl" />
-          <div className="absolute inset-0 cyber-grid opacity-[0.03]" />
-        </div>
-        <div className="flex flex-col items-center gap-4 relative z-10">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-glow-pulse" />
-            <Loader2 className="h-8 w-8 animate-spin text-primary relative z-10" />
-          </div>
-          <p className="text-muted-foreground animate-pulse font-mono tracking-wider">Checking system status...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Checking system status...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Futuristic background effects */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-        <div className="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-float" />
-        <div className="absolute inset-0 cyber-grid opacity-[0.02]" />
-      </div>
-
-      <div className="relative z-10">
-        <ResultHeader />
-      </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      <ResultHeader />
       
-      <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
+      <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <Button
             variant="ghost"
-            className="mb-4 hover:neon-glow transition-all"
+            className="mb-4"
             onClick={() => navigate('/')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Results
           </Button>
 
-          <Card className="shadow-official glass border-primary/20 neon-border transition-all duration-300 hover:neon-glow">
+          <Card className="shadow-card border-primary/10">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-foreground gradient-text">Admin Portal</CardTitle>
-              <CardDescription className="font-mono tracking-wide">
+              <CardTitle className="text-2xl text-foreground">Admin Portal</CardTitle>
+              <CardDescription>
                 {adminExists 
                   ? "Sign in to access the admin dashboard" 
                   : "Create the first admin account to get started"

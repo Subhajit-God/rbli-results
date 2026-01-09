@@ -67,37 +67,32 @@ const getPerformanceColor = (percentage: number) => {
 
 const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: ResultCardProps) => {
   return (
-    <Card className="shadow-official glass border-2 border-primary/20 overflow-hidden print:shadow-none print:border transition-all duration-300 neon-border hover:neon-glow">
+    <Card className="shadow-official border-2 border-primary/10 overflow-hidden print:shadow-none print:border transition-all duration-300">
       {/* Header */}
       <CardHeader className="header-gradient text-primary-foreground p-6 md:p-8 print:p-4 relative overflow-hidden">
         {/* Decorative background */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-accent rounded-full translate-x-1/2 -translate-y-1/2 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary-foreground rounded-full -translate-x-1/2 translate-y-1/2 blur-xl" />
-          <div className="absolute inset-0 cyber-grid opacity-20" />
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-accent rounded-full translate-x-1/2 -translate-y-1/2" />
         </div>
         
         <div className="flex items-center gap-4 justify-center relative z-10">
-          <div className="relative group">
-            <div className="absolute -inset-2 bg-gradient-to-r from-primary-foreground/30 via-accent/50 to-primary-foreground/30 rounded-full blur-lg opacity-60 group-hover:opacity-100 transition-opacity animate-glow-pulse" />
+          <div className="relative">
             <div className="absolute inset-0 bg-accent/20 rounded-full blur-md" />
             <img 
               src={schoolLogo} 
               alt="School Logo" 
-              className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-primary-foreground/50 relative z-10 shadow-lg transition-transform duration-300 group-hover:scale-110"
+              className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-primary-foreground/50 relative z-10 shadow-lg"
             />
           </div>
           <div className="text-center">
-            <h2 className="text-xl md:text-2xl font-bold drop-shadow-lg neon-text">Ramjibanpur Babulal Institution</h2>
-            <p className="text-sm text-primary-foreground/70 font-mono tracking-wider">Estd. 1925</p>
+            <h2 className="text-xl md:text-2xl font-bold drop-shadow-sm">Ramjibanpur Babulal Institution</h2>
+            <p className="text-sm text-primary-foreground/70">Estd. 1925</p>
           </div>
         </div>
         <div className="text-center mt-5 relative z-10">
-          <div className="relative inline-block group">
-            <div className="absolute -inset-1 gold-gradient rounded-full blur opacity-50 group-hover:opacity-75 transition-opacity" />
-            <Badge className="relative gold-gradient text-accent-foreground border-none text-sm px-6 py-1.5 shadow-md">
-            </Badge>
-          </div>
+          <Badge className="gold-gradient text-accent-foreground border-none text-sm px-6 py-1.5 shadow-md">
+            {examName}
+          </Badge>
         </div>
       </CardHeader>
 
@@ -113,7 +108,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
         )}
 
         {/* Student Details */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-5 glass rounded-xl border border-primary/10 transition-all duration-200 hover:neon-glow">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-5 bg-muted/30 rounded-xl border border-border transition-all duration-200 hover:bg-muted/40">
           {[
             { label: "Student Name", value: student.name },
             { label: "Class", value: student.classNumber },
@@ -134,7 +129,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
         </div>
 
         {/* Marks Table */}
-        <div className="overflow-x-auto rounded-xl border border-primary/20 neon-border">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="header-gradient text-primary-foreground">
@@ -212,13 +207,13 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
 
         {/* Result Summary */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-          <div className="glass neon-border p-4 rounded-xl text-center shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:neon-glow">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1">Grand Total</span>
             <p className="text-xl md:text-2xl font-bold text-foreground">
               {summary.grandTotal}<span className="text-muted-foreground text-base font-normal">/{summary.fullMarks}</span>
             </p>
           </div>
-          <div className="glass neon-border p-4 rounded-xl text-center shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:neon-glow">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-1">Percentage</span>
             <p className={cn(
               "text-xl md:text-2xl font-bold flex items-center justify-center gap-1",
@@ -228,17 +223,17 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
               {summary.percentage.toFixed(1)}%
             </p>
           </div>
-          <div className="glass neon-border p-4 rounded-xl text-center shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:neon-glow">
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-xl text-center border border-border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-2">Grade</span>
             <Badge className={`text-lg px-4 py-1 ${getGradeColor(summary.grade)}`}>
               {summary.grade}
             </Badge>
           </div>
           <div className={cn(
-            "p-4 rounded-xl text-center shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:neon-glow glass",
+            "p-4 rounded-xl text-center border shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]",
             summary.isPassed 
-              ? 'border-success/30 neon-border' 
-              : 'border-destructive/30'
+              ? 'bg-gradient-to-br from-success/10 to-success/5 border-success/30' 
+              : 'bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30'
           )}>
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide block mb-2">Result</span>
             <Badge 
@@ -252,10 +247,10 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
               {summary.isPassed ? 'PASS ✓' : 'FAIL'}
             </Badge>
           </div>
-          <div className="col-span-2 md:col-span-1 glass neon-border p-4 rounded-xl text-center shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02] hover:neon-glow">
+          <div className="col-span-2 md:col-span-1 bg-gradient-to-br from-secondary to-secondary/80 p-4 rounded-xl text-center border border-accent/30 shadow-sm transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
             <span className="text-xs text-secondary-foreground/70 font-medium uppercase tracking-wide block mb-1">Class Rank</span>
-            <p className="text-xl md:text-2xl font-bold text-foreground flex items-center justify-center gap-2 neon-text">
-              <Award className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+            <p className="text-xl md:text-2xl font-bold text-secondary-foreground flex items-center justify-center gap-2">
+              <Award className="h-5 w-5 md:h-6 md:w-6 text-accent" />
               {summary.rank}
             </p>
           </div>
@@ -267,7 +262,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
             <Button 
               onClick={onDownloadPDF}
               size="lg"
-              className="gold-gradient text-accent-foreground hover:opacity-90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:neon-glow"
+              className="gold-gradient text-accent-foreground hover:opacity-90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <Download className="mr-2 h-5 w-5" />
               Download PDF Result
