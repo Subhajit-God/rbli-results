@@ -198,7 +198,7 @@ const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps
       {/* School Motto and Developer Credit Footer */}
       <div className="mt-6 pt-4 border-t border-gray-300 text-center">
         <p className="text-xs text-gray-600 italic">Excellence in Education Since 1925</p>
-        <p className="text-xs text-gray-500 mt-1">Made With Love By Subhajit Das Whose ID is 04070122000103</p>
+        <p className="text-xs text-gray-500 mt-1 font-bold">Made With ❤️ By Subhajit Das Whose ID is 04070122000103</p>
       </div>
     </div>
   );
