@@ -43,6 +43,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { getDefaultFullMarks } from "@/lib/presetSubjects";
 import InitializeSubjectsButton from "./InitializeSubjectsButton";
 import {
   DndContext,
@@ -297,12 +298,15 @@ const SubjectsSection = () => {
     } else {
       setSelectedSubject(null);
       setHasExistingMarks(false);
+      // Use default full marks based on class
+      const classNum = parseInt(selectedClass);
+      const defaultMarks = getDefaultFullMarks(classNum);
       setFormData({
         name: "",
         class_number: selectedClass,
-        full_marks_1: "30",
-        full_marks_2: "50",
-        full_marks_3: "20",
+        full_marks_1: defaultMarks.full_marks_1.toString(),
+        full_marks_2: defaultMarks.full_marks_2.toString(),
+        full_marks_3: defaultMarks.full_marks_3.toString(),
       });
     }
     setErrors({});
@@ -313,14 +317,15 @@ const SubjectsSection = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.name.trim()) newErrors.name = "Subject name is required";
-    if (!formData.full_marks_1 || parseInt(formData.full_marks_1) <= 0) {
-      newErrors.full_marks_1 = "Full marks must be positive";
+    // Allow 0 for subjects that require manual marks configuration (Health/Work Education)
+    if (formData.full_marks_1 === "" || parseInt(formData.full_marks_1) < 0) {
+      newErrors.full_marks_1 = "Full marks cannot be negative";
     }
-    if (!formData.full_marks_2 || parseInt(formData.full_marks_2) <= 0) {
-      newErrors.full_marks_2 = "Full marks must be positive";
+    if (formData.full_marks_2 === "" || parseInt(formData.full_marks_2) < 0) {
+      newErrors.full_marks_2 = "Full marks cannot be negative";
     }
-    if (!formData.full_marks_3 || parseInt(formData.full_marks_3) <= 0) {
-      newErrors.full_marks_3 = "Full marks must be positive";
+    if (formData.full_marks_3 === "" || parseInt(formData.full_marks_3) < 0) {
+      newErrors.full_marks_3 = "Full marks cannot be negative";
     }
 
     if (Object.keys(newErrors).length > 0) {

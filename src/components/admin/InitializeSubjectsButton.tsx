@@ -40,8 +40,8 @@ const InitializeSubjectsButton = ({ onComplete, existingSubjectsCount }: Initial
 
       for (const [classNum, subjects] of Object.entries(PRESET_SUBJECTS)) {
         const classNumber = parseInt(classNum);
-        const fullMarks = getDefaultFullMarks(classNumber);
         for (const subjectName of subjects) {
+          const fullMarks = getDefaultFullMarks(classNumber, subjectName);
           subjectsToInsert.push({
             name: subjectName,
             class_number: classNumber,
@@ -115,6 +115,9 @@ const InitializeSubjectsButton = ({ onComplete, existingSubjectsCount }: Initial
               </ul>
               <p className="text-muted-foreground">
                 Default full marks: I = 30, II = 50, III = 20 (Class 6-8: III = 70)
+              </p>
+              <p className="text-warning-foreground text-sm">
+                <strong>Note:</strong> Health Education & Work Education (Class 5-8) will have 0 marks by default. Admin must manually set marks for these subjects.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>

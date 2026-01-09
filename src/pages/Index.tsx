@@ -318,6 +318,9 @@ const Index = () => {
         <p className="text-xs text-muted-foreground/70 mt-1">
           Excellence in Education Since 1925
         </p>
+        <p className="text-xs text-muted-foreground/50 mt-1">
+          Made With Love By Subhajit Das Whose ID is 04070122000103
+        </p>
       </footer>
     </div>
   );
