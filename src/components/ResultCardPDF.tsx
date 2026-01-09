@@ -54,7 +54,7 @@ const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps
   return (
     <div 
       id="result-pdf" 
-      className="hidden print:block bg-white text-black"
+      className="bg-white text-black print:block"
       style={{ 
         width: '297mm', 
         height: '210mm', 
@@ -181,8 +181,8 @@ const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-between items-end text-sm mt-8">
+      {/* Signatures Footer */}
+      <div className="flex justify-between items-end text-sm mt-6">
         <div className="text-center">
           <div className="border-t border-black pt-1 px-12">Class Teacher</div>
         </div>
@@ -193,6 +193,12 @@ const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps
         <div className="text-center">
           <div className="border-t border-black pt-1 px-12">Principal</div>
         </div>
+      </div>
+
+      {/* School Motto and Developer Credit Footer */}
+      <div className="mt-6 pt-4 border-t border-gray-300 text-center">
+        <p className="text-xs text-gray-600 italic">Excellence in Education Since 1925</p>
+        <p className="text-xs text-gray-500 mt-1">Made With Love By Subhajit Das Whose ID is 04070122000103</p>
       </div>
     </div>
   );

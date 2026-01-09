@@ -74,7 +74,8 @@ const SettingsSection = () => {
       await supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('exams').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('admin_roles').delete().eq('user_id', user.id);
+      // Delete ALL admin roles (not just current user) to allow new registration
+      await supabase.from('admin_roles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
       // Sign out
       await supabase.auth.signOut();
