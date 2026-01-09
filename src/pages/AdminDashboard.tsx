@@ -156,10 +156,19 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-          <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+        {/* Background effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-3xl" />
+          <div className="absolute inset-0 cyber-grid opacity-[0.03]" />
+        </div>
+        <div className="flex flex-col items-center gap-4 relative z-10">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-glow-pulse" />
+            <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin relative z-10" />
+          </div>
+          <p className="text-muted-foreground animate-pulse font-mono tracking-wider">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -196,7 +205,7 @@ const AdminDashboard = () => {
               <DashboardStatsSkeleton />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="shadow-card glass neon-border transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:neon-glow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Students</CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
@@ -207,7 +216,7 @@ const AdminDashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="shadow-card glass neon-border transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:neon-glow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Subjects</CardTitle>
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
@@ -218,7 +227,7 @@ const AdminDashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="shadow-card glass neon-border transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:neon-glow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Exams</CardTitle>
                     <FileText className="h-4 w-4 text-muted-foreground" />
@@ -229,7 +238,7 @@ const AdminDashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="shadow-card glass neon-border transition-all duration-200 hover:shadow-lg hover:scale-[1.02] hover:neon-glow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Deployed</CardTitle>
                     <Rocket className="h-4 w-4 text-muted-foreground" />
@@ -243,15 +252,15 @@ const AdminDashboard = () => {
             )}
 
             {/* Quick Actions */}
-            <Card className="shadow-card">
+            <Card className="shadow-card glass neon-border">
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common tasks for result management</CardDescription>
+                <CardTitle className="gradient-text">Quick Actions</CardTitle>
+                <CardDescription className="font-mono text-xs tracking-wide">Common tasks for result management</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md hover:neon-glow glass"
                   onClick={() => setActiveSection("students")}
                 >
                   <Users className="h-6 w-6" />
@@ -259,7 +268,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md hover:neon-glow glass"
                   onClick={() => setActiveSection("marks")}
                 >
                   <ClipboardList className="h-6 w-6" />
@@ -267,7 +276,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md hover:neon-glow glass"
                   onClick={() => setActiveSection("ranks")}
                 >
                   <Award className="h-6 w-6" />
@@ -275,7 +284,7 @@ const AdminDashboard = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md hover:neon-glow glass"
                   onClick={() => setActiveSection("deploy")}
                 >
                   <Rocket className="h-6 w-6" />
@@ -285,13 +294,13 @@ const AdminDashboard = () => {
             </Card>
 
             {/* Workflow Guide */}
-            <Card className="shadow-card border-primary/20">
+            <Card className="shadow-card glass border-primary/20 neon-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                  Result Publishing Workflow
+                  <AlertTriangle className="h-5 w-5 text-warning animate-pulse-subtle" />
+                  <span className="gradient-text">Result Publishing Workflow</span>
                 </CardTitle>
-                <CardDescription>Follow these steps to publish examination results</CardDescription>
+                <CardDescription className="font-mono text-xs tracking-wide">Follow these steps to publish examination results</CardDescription>
               </CardHeader>
               <CardContent>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
@@ -311,11 +320,18 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex transition-colors duration-300">
+    <div className="min-h-screen bg-background flex transition-colors duration-300 relative overflow-hidden">
+      {/* Futuristic background effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/3 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/3 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute inset-0 cyber-grid opacity-[0.015]" />
+      </div>
+
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-card border-r border-border transform transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 glass border-r border-primary/20 transform transition-all duration-300 ease-in-out",
           "lg:translate-x-0 lg:static",
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
           isSidebarCollapsed ? 'lg:w-16' : 'w-64'
