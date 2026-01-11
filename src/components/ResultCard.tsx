@@ -67,7 +67,7 @@ const getPerformanceColor = (percentage: number) => {
 
 const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: ResultCardProps) => {
   return (
-    <Card className="shadow-official border-2 border-primary/10 overflow-hidden print:shadow-none print:border transition-all duration-300">
+    <Card className="glass-effect neon-border overflow-hidden print:shadow-none print:border transition-all duration-300">
       {/* Header */}
       <CardHeader className="header-gradient text-primary-foreground p-6 md:p-8 print:p-4 relative overflow-hidden">
         {/* Decorative background */}
