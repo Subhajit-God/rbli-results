@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Trophy, Star, Sparkles, Award } from "lucide-react";
+import confetti from "canvas-confetti";
 
 interface CelebrationProps {
   show: boolean;
@@ -10,29 +11,126 @@ interface CelebrationProps {
   onComplete?: () => void;
 }
 
+// Particle explosion effect
+const fireParticleExplosion = (isPassed: boolean, isExcellent: boolean) => {
+  const duration = 1500;
+  const end = Date.now() + duration;
+
+  // Color schemes based on result
+  const passedColors = isExcellent 
+    ? ["#22c55e", "#eab308", "#3b82f6", "#f97316", "#06b6d4"]
+    : ["#3b82f6", "#22c55e", "#eab308", "#06b6d4"];
+  const failedColors = ["#f97316", "#eab308", "#ef4444"];
+  const colors = isPassed ? passedColors : failedColors;
+
+  // Center explosion burst
+  confetti({
+    particleCount: 100,
+    spread: 100,
+    origin: { x: 0.5, y: 0.5 },
+    colors,
+    startVelocity: 45,
+    gravity: 0.8,
+    scalar: 1.2,
+    ticks: 100,
+    zIndex: 9999,
+  });
+
+  // Multi-directional bursts
+  const directions = [
+    { angle: 45, x: 0.2, y: 0.8 },
+    { angle: 135, x: 0.8, y: 0.8 },
+    { angle: 90, x: 0.5, y: 0.9 },
+    { angle: 60, x: 0.3, y: 0.7 },
+    { angle: 120, x: 0.7, y: 0.7 },
+  ];
+
+  directions.forEach((dir, i) => {
+    setTimeout(() => {
+      confetti({
+        particleCount: 30,
+        angle: dir.angle,
+        spread: 60,
+        origin: { x: dir.x, y: dir.y },
+        colors,
+        startVelocity: 35,
+        gravity: 1,
+        scalar: 0.9,
+        ticks: 80,
+        zIndex: 9999,
+      });
+    }, i * 100);
+  });
+
+  // Continuous sparkle effect for excellent results
+  if (isExcellent && isPassed) {
+    (function frame() {
+      confetti({
+        particleCount: 3,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors,
+        shapes: ["star"],
+        scalar: 1.5,
+        zIndex: 9999,
+      });
+      confetti({
+        particleCount: 3,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors,
+        shapes: ["star"],
+        scalar: 1.5,
+        zIndex: 9999,
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+  }
+};
+
 export function Celebration({ show, isPassed, percentage, grade, onComplete }: CelebrationProps) {
   const [visible, setVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
+  const [hasExploded, setHasExploded] = useState(false);
+
+  const isExcellent = percentage >= 90;
+  const isGood = percentage >= 70 && percentage < 90;
 
   useEffect(() => {
-    if (show) {
+    if (show && !hasExploded) {
       setVisible(true);
       setAnimating(true);
+      setHasExploded(true);
+      
+      // Fire the particle explosion
+      setTimeout(() => {
+        fireParticleExplosion(isPassed, isExcellent);
+      }, 200);
+
       const timer = setTimeout(() => {
         setAnimating(false);
         setTimeout(() => {
           setVisible(false);
           onComplete?.();
         }, 500);
-      }, 3000);
+      }, 3500);
       return () => clearTimeout(timer);
     }
-  }, [show, onComplete]);
+  }, [show, onComplete, isPassed, isExcellent, hasExploded]);
+
+  // Reset hasExploded when show becomes false
+  useEffect(() => {
+    if (!show) {
+      setHasExploded(false);
+    }
+  }, [show]);
 
   if (!visible) return null;
-
-  const isExcellent = percentage >= 90;
-  const isGood = percentage >= 70 && percentage < 90;
 
   return (
     <div 
@@ -43,13 +141,13 @@ export function Celebration({ show, isPassed, percentage, grade, onComplete }: C
     >
       <div 
         className={cn(
-          "relative p-8 md:p-12 rounded-2xl shadow-2xl text-center transition-all duration-500",
+          "relative p-8 md:p-12 rounded-2xl shadow-2xl text-center transition-all duration-500 glass-effect",
           animating ? "scale-100 opacity-100" : "scale-90 opacity-0",
           isPassed 
             ? isExcellent 
-              ? "bg-gradient-to-br from-success/20 to-success/5 border-2 border-success"
-              : "bg-gradient-to-br from-primary/20 to-primary/5 border-2 border-primary"
-            : "bg-gradient-to-br from-destructive/20 to-destructive/5 border-2 border-destructive"
+              ? "neon-border bg-gradient-to-br from-success/30 to-success/10 border-2 border-success"
+              : "neon-border bg-gradient-to-br from-primary/30 to-primary/10 border-2 border-primary"
+            : "bg-gradient-to-br from-destructive/30 to-destructive/10 border-2 border-destructive"
         )}
       >
         {/* Floating icons for excellent results */}
