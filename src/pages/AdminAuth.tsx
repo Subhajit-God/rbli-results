@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
+import FloatingShapes from "@/components/FloatingShapes";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -243,8 +244,9 @@ const AdminAuth = () => {
 
   if (isCheckingAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
+      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+        <FloatingShapes />
+        <div className="flex flex-col items-center gap-4 relative z-10">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-muted-foreground">Checking system status...</p>
         </div>
@@ -253,23 +255,26 @@ const AdminAuth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <ResultHeader />
+    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+      <FloatingShapes />
+      <div className="relative z-10">
+        <ResultHeader />
+      </div>
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-md mx-auto">
           <Button
             variant="ghost"
-            className="mb-4"
+            className="mb-4 hover:neon-glow"
             onClick={() => navigate('/')}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Results
           </Button>
 
-          <Card className="shadow-card border-primary/10">
+          <Card className="glass-effect neon-border animate-glow">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-foreground">Admin Portal</CardTitle>
+              <CardTitle className="text-2xl text-foreground text-glow">Admin Portal</CardTitle>
               <CardDescription>
                 {adminExists 
                   ? "Sign in to access the admin dashboard" 
@@ -478,8 +483,10 @@ const AdminAuth = () => {
         </div>
       </main>
 
-      <footer className="bg-muted/50 border-t border-border py-4 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} Ramjibanpur Babulal Institution. All Rights Reserved.</p>
+      <footer className="glass-effect border-t border-primary/20 py-4 text-center relative z-10">
+        <p className="text-sm text-foreground">© {new Date().getFullYear()} Ramjibanpur Babulal Institution. All Rights Reserved.</p>
+        <p className="text-xs text-muted-foreground mt-1">Excellence in Education Since 1925</p>
+        <p className="text-xs text-primary mt-1 font-bold text-glow">Made With ❤️ By Subhajit Das Whose ID is 04070122000103</p>
       </footer>
     </div>
   );

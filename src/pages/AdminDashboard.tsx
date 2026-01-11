@@ -28,6 +28,7 @@ import schoolLogo from "@/assets/school-logo.png";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DashboardStatsSkeleton } from "@/components/ui/result-skeleton";
+import FloatingShapes from "@/components/FloatingShapes";
 
 // Import dashboard sections
 import StudentsSection from "@/components/admin/StudentsSection";
@@ -156,9 +157,10 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+        <FloatingShapes />
+        <div className="flex flex-col items-center gap-4 relative z-10">
+          <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin neon-glow" />
           <p className="text-muted-foreground animate-pulse">Loading dashboard...</p>
         </div>
       </div>
@@ -187,7 +189,7 @@ const AdminDashboard = () => {
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Dashboard Overview</h2>
+              <h2 className="text-2xl font-bold text-foreground text-glow">Dashboard Overview</h2>
               <p className="text-muted-foreground">Manage your school's examination system</p>
             </div>
 
@@ -196,32 +198,32 @@ const AdminDashboard = () => {
               <DashboardStatsSkeleton />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="glass-effect neon-border transition-all duration-200 hover:shadow-official hover:scale-[1.02]">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <Users className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalStudents}</div>
+                    <div className="text-2xl font-bold text-glow">{stats.totalStudents}</div>
                     <p className="text-xs text-muted-foreground">Class 5 - Class 9</p>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="glass-effect neon-border transition-all duration-200 hover:shadow-official hover:scale-[1.02]">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Subjects</CardTitle>
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <BookOpen className="h-4 w-4 text-secondary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalSubjects}</div>
+                    <div className="text-2xl font-bold text-glow-green">{stats.totalSubjects}</div>
                     <p className="text-xs text-muted-foreground">Across all classes</p>
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="glass-effect neon-border transition-all duration-200 hover:shadow-official hover:scale-[1.02]">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Exams</CardTitle>
-                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <FileText className="h-4 w-4 text-accent" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stats.totalExams}</div>
@@ -229,13 +231,13 @@ const AdminDashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-card transition-all duration-200 hover:shadow-lg hover:scale-[1.02]">
+                <Card className="glass-effect neon-border transition-all duration-200 hover:shadow-official hover:scale-[1.02]">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Deployed</CardTitle>
-                    <Rocket className="h-4 w-4 text-muted-foreground" />
+                    <Rocket className="h-4 w-4 text-warning" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stats.deployedExams}</div>
+                    <div className="text-2xl font-bold text-glow-orange">{stats.deployedExams}</div>
                     <p className="text-xs text-muted-foreground">Results published</p>
                   </CardContent>
                 </Card>
@@ -243,53 +245,53 @@ const AdminDashboard = () => {
             )}
 
             {/* Quick Actions */}
-            <Card className="shadow-card">
+            <Card className="glass-effect neon-border">
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+                <CardTitle className="text-glow">Quick Actions</CardTitle>
                 <CardDescription>Common tasks for result management</CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:neon-glow border-primary/30"
                   onClick={() => setActiveSection("students")}
                 >
-                  <Users className="h-6 w-6" />
+                  <Users className="h-6 w-6 text-primary" />
                   <span>Add Students</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:green-glow border-secondary/30"
                   onClick={() => setActiveSection("marks")}
                 >
-                  <ClipboardList className="h-6 w-6" />
+                  <ClipboardList className="h-6 w-6 text-secondary" />
                   <span>Enter Marks</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-official border-accent/30"
                   onClick={() => setActiveSection("ranks")}
                 >
-                  <Award className="h-6 w-6" />
+                  <Award className="h-6 w-6 text-accent" />
                   <span>Finalize Ranks</span>
                 </Button>
                 <Button 
                   variant="outline" 
-                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                  className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:orange-glow border-warning/30"
                   onClick={() => setActiveSection("deploy")}
                 >
-                  <Rocket className="h-6 w-6" />
+                  <Rocket className="h-6 w-6 text-warning" />
                   <span>Deploy Results</span>
                 </Button>
               </CardContent>
             </Card>
 
             {/* Workflow Guide */}
-            <Card className="shadow-card border-primary/20">
+            <Card className="glass-effect border-warning/30">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-warning" />
-                  Result Publishing Workflow
+                  <span className="text-glow-orange">Result Publishing Workflow</span>
                 </CardTitle>
                 <CardDescription>Follow these steps to publish examination results</CardDescription>
               </CardHeader>
@@ -305,17 +307,26 @@ const AdminDashboard = () => {
                 </ol>
               </CardContent>
             </Card>
+
+            {/* Footer Attribution */}
+            <div className="text-center py-4">
+              <p className="text-xs text-muted-foreground">Excellence in Education Since 1925</p>
+              <p className="text-xs text-primary font-bold text-glow">Made With ❤️ By Subhajit Das Whose ID is 04070122000103</p>
+            </div>
           </div>
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex transition-colors duration-300">
+    <div className="min-h-screen bg-background flex transition-colors duration-300 relative overflow-hidden">
+      {/* Futuristic Background */}
+      <FloatingShapes />
+      
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-card border-r border-border transform transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 glass-effect border-r border-primary/20 transform transition-all duration-300 ease-in-out",
           "lg:translate-x-0 lg:static",
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
           isSidebarCollapsed ? 'lg:w-16' : 'w-64'
@@ -323,7 +334,7 @@ const AdminDashboard = () => {
       >
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
-          <div className="p-4 border-b border-border">
+          <div className="p-4 border-b border-primary/20">
             <div className="flex items-center gap-3">
               <img src={schoolLogo} alt="Logo" className="w-10 h-10 rounded-full flex-shrink-0" />
               {!isSidebarCollapsed && (

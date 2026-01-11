@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
 import { Celebration } from "@/components/Celebration";
 import { useConfetti } from "@/hooks/useConfetti";
+import FloatingShapes from "@/components/FloatingShapes";
 
 interface ResultData {
   student: {
@@ -204,7 +205,10 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-background flex flex-col transition-colors duration-300 relative overflow-hidden">
+      {/* Futuristic Background */}
+      <FloatingShapes />
+      
       {/* PDF Version - Hidden on screen, shown on print */}
       {resultData && (
         <div id="result-pdf-container" className="hidden print:block">
@@ -228,7 +232,7 @@ const Index = () => {
         />
       )}
 
-      <div className="print:hidden">
+      <div className="print:hidden relative z-10">
         <ResultHeader />
       </div>
       
@@ -237,20 +241,20 @@ const Index = () => {
         <ThemeToggle />
       </div>
       
-      <main className="flex-1 container mx-auto px-4 py-10 md:py-16 print:hidden">
+      <main className="flex-1 container mx-auto px-4 py-10 md:py-16 print:hidden relative z-10">
         {isInitialLoading ? (
           <div className="max-w-md mx-auto animate-fade-in">
             <ResultFormSkeleton />
           </div>
         ) : !resultData ? (
           <div className="max-w-md mx-auto animate-fade-in">
-            <Card className="shadow-official border-2 border-primary/10 overflow-hidden backdrop-blur-sm transition-all duration-300 hover:shadow-lg">
-              <div className="h-1.5 gold-gradient" />
+            <Card className="glass-effect neon-border overflow-hidden transition-all duration-300 hover:shadow-official animate-glow">
+              <div className="h-1.5 cyber-gradient" />
               <CardHeader className="text-center space-y-3 pb-2">
-                <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-2 transition-transform hover:scale-110 duration-300">
+                <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 neon-glow flex items-center justify-center mb-2 transition-transform hover:scale-110 duration-300">
                   <Shield className="h-7 w-7 text-primary" />
                 </div>
-                <CardTitle className="text-2xl md:text-3xl text-foreground font-bold">
+                <CardTitle className="text-2xl md:text-3xl text-foreground font-bold text-glow">
                   Check Your Result
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground">
@@ -259,7 +263,7 @@ const Index = () => {
               </CardHeader>
               <CardContent className="pt-4 pb-8 px-6 md:px-8">
                 {error && (
-                  <Alert variant="destructive" className="mb-6 animate-fade-in">
+                  <Alert variant="destructive" className="mb-6 animate-fade-in neon-border">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
@@ -303,7 +307,7 @@ const Index = () => {
       <div className="fixed bottom-4 left-4 print:hidden z-50">
         <Link 
           to="/admin/auth"
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 bg-card/95 backdrop-blur-sm px-4 py-2.5 rounded-full border border-border shadow-md hover:shadow-lg hover:border-primary/30 hover:scale-105"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 glass-effect px-4 py-2.5 rounded-full border border-primary/30 shadow-md hover:neon-glow hover:border-primary/50 hover:scale-105"
         >
           <Shield className="h-3.5 w-3.5" />
           Admin Login
@@ -311,14 +315,14 @@ const Index = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-muted/30 border-t border-border py-6 text-center print:hidden transition-colors duration-300">
-        <p className="text-sm text-muted-foreground">
+      <footer className="glass-effect border-t border-primary/20 py-6 text-center print:hidden transition-colors duration-300 relative z-10">
+        <p className="text-sm text-foreground">
           © {new Date().getFullYear()} Ramjibanpur Babulal Institution. All Rights Reserved.
         </p>
-        <p className="text-xs text-muted-foreground/70 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           Excellence in Education Since 1925
         </p>
-        <p className="text-xs text-muted-foreground/50 mt-1 font-bold">
+        <p className="text-xs text-primary mt-1 font-bold text-glow">
           Made With ❤️ By Subhajit Das Whose ID is 04070122000103
         </p>
       </footer>
