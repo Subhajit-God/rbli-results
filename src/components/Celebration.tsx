@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Trophy, Star, Sparkles, Award } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useCelebrationSound } from "@/hooks/useCelebrationSound";
 
 interface CelebrationProps {
   show: boolean;
@@ -13,7 +14,7 @@ interface CelebrationProps {
 
 // Particle explosion effect
 const fireParticleExplosion = (isPassed: boolean, isExcellent: boolean) => {
-  const duration = 1500;
+  const duration = 3000; // Extended duration for 5s total animation
   const end = Date.now() + duration;
 
   // Color schemes based on result
@@ -97,6 +98,7 @@ export function Celebration({ show, isPassed, percentage, grade, onComplete }: C
   const [visible, setVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [hasExploded, setHasExploded] = useState(false);
+  const { playCelebrationSound } = useCelebrationSound();
 
   const isExcellent = percentage >= 90;
   const isGood = percentage >= 70 && percentage < 90;
@@ -107,21 +109,23 @@ export function Celebration({ show, isPassed, percentage, grade, onComplete }: C
       setAnimating(true);
       setHasExploded(true);
       
-      // Fire the particle explosion
+      // Fire the particle explosion and play sound
       setTimeout(() => {
         fireParticleExplosion(isPassed, isExcellent);
+        playCelebrationSound(isPassed, isExcellent);
       }, 200);
 
+      // Extended to 5 seconds total
       const timer = setTimeout(() => {
         setAnimating(false);
         setTimeout(() => {
           setVisible(false);
           onComplete?.();
         }, 500);
-      }, 3500);
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [show, onComplete, isPassed, isExcellent, hasExploded]);
+  }, [show, onComplete, isPassed, isExcellent, hasExploded, playCelebrationSound]);
 
   // Reset hasExploded when show becomes false
   useEffect(() => {
