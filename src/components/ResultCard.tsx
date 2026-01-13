@@ -1,7 +1,8 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Award, TrendingUp } from "lucide-react";
+import { Download, Award, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
@@ -65,7 +66,39 @@ const getPerformanceColor = (percentage: number) => {
   return 'text-destructive';
 };
 
+const getPerformanceMessage = (percentage: number) => {
+  if (percentage >= 90) return { text: "Outstanding!", emoji: "🎉" };
+  if (percentage >= 70) return { text: "Excellent!", emoji: "🌟" };
+  if (percentage >= 45) return { text: "Good Job!", emoji: "👍" };
+  return { text: "Keep Going!", emoji: "💪" };
+};
+
+const getPerformanceBgColor = (percentage: number) => {
+  if (percentage >= 90) return "from-success/20 to-success/10 border-success/40";
+  if (percentage >= 70) return "from-primary/20 to-primary/10 border-primary/40";
+  if (percentage >= 45) return "from-warning/20 to-warning/10 border-warning/40";
+  return "from-destructive/20 to-destructive/10 border-destructive/40";
+};
+
 const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: ResultCardProps) => {
+  const [showPerformanceBanner, setShowPerformanceBanner] = useState(true);
+  const [isHiding, setIsHiding] = useState(false);
+
+  useEffect(() => {
+    // Random duration between 2-5 seconds
+    const duration = 2000 + Math.random() * 3000;
+    
+    const hideTimer = setTimeout(() => {
+      setIsHiding(true);
+      // Wait for animation to complete before removing
+      setTimeout(() => setShowPerformanceBanner(false), 500);
+    }, duration);
+
+    return () => clearTimeout(hideTimer);
+  }, []);
+
+  const performanceMessage = getPerformanceMessage(summary.percentage);
+
   return (
     <Card className="glass-effect neon-border overflow-hidden print:shadow-none print:border transition-all duration-300">
       {/* Header */}
@@ -97,13 +130,46 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
       </CardHeader>
 
       <CardContent className="p-6 md:p-8 space-y-6">
-        {/* Achievement Badges */}
-        {summary.isPassed && (
-          <div className="flex justify-center animate-fade-in">
-            <AchievementsList 
-              percentage={summary.percentage} 
-              rank={summary.rank} 
-            />
+        {/* Performance Banner - Auto-hides after 2-5 seconds */}
+        {showPerformanceBanner && summary.isPassed && (
+          <div 
+            className={cn(
+              "relative p-6 rounded-2xl border-2 bg-gradient-to-br text-center transition-all duration-500",
+              getPerformanceBgColor(summary.percentage),
+              isHiding ? "opacity-0 scale-95 -translate-y-4" : "opacity-100 scale-100 translate-y-0"
+            )}
+          >
+            {/* Decorative stars */}
+            <div className="absolute -top-3 -left-3 text-accent animate-pulse text-2xl">✨</div>
+            <div className="absolute -top-3 -right-3 text-accent animate-pulse text-2xl">✨</div>
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-accent animate-pulse text-xl">✨</div>
+            
+            {/* Trophy icon */}
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-success/20 text-success mb-3 mx-auto">
+              <Trophy className="h-8 w-8" />
+            </div>
+            
+            {/* Performance message */}
+            <h3 className={cn(
+              "text-2xl font-bold mb-2",
+              summary.percentage >= 90 ? "text-success" : 
+              summary.percentage >= 70 ? "text-primary" : 
+              summary.percentage >= 45 ? "text-warning" : "text-destructive"
+            )}>
+              {performanceMessage.text} {performanceMessage.emoji}
+            </h3>
+            
+            <p className="text-muted-foreground mb-4">
+              You scored {summary.percentage.toFixed(1)}% with Grade {summary.grade}
+            </p>
+            
+            {/* Achievement badges */}
+            <div className="flex justify-center">
+              <AchievementsList 
+                percentage={summary.percentage} 
+                rank={summary.rank} 
+              />
+            </div>
           </div>
         )}
 
