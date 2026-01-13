@@ -12,8 +12,6 @@ import ResultCard from "@/components/ResultCard";
 import ResultCardPDF from "@/components/ResultCardPDF";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
-import { Celebration } from "@/components/Celebration";
-import { useConfetti } from "@/hooks/useConfetti";
 import FloatingShapes from "@/components/FloatingShapes";
 
 interface ResultData {
@@ -54,32 +52,13 @@ const Index = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resultData, setResultData] = useState<ResultData | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
   const { toast } = useToast();
-  const { fireConfetti, fireSchoolColors, fireStars } = useConfetti();
 
   // Simulate initial page load
   useEffect(() => {
     const timer = setTimeout(() => setIsInitialLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
-
-  // Trigger celebration when result is loaded
-  useEffect(() => {
-    if (resultData) {
-      setShowCelebration(true);
-      if (resultData.summary.isPassed) {
-        if (resultData.summary.percentage >= 90) {
-          fireStars();
-          setTimeout(() => fireSchoolColors(), 500);
-        } else if (resultData.summary.percentage >= 70) {
-          fireConfetti();
-        } else {
-          fireSchoolColors();
-        }
-      }
-    }
-  }, [resultData, fireConfetti, fireSchoolColors, fireStars]);
 
   const handleLookup = async (data: { studentId: string; classNumber: string; dob: Date }) => {
     setIsLoading(true);
@@ -221,16 +200,6 @@ const Index = () => {
         </div>
       )}
 
-      {/* Celebration Modal */}
-      {resultData && (
-        <Celebration
-          show={showCelebration}
-          isPassed={resultData.summary.isPassed}
-          percentage={resultData.summary.percentage}
-          grade={resultData.summary.grade}
-          onComplete={() => setShowCelebration(false)}
-        />
-      )}
 
       <div className="print:hidden relative z-10">
         <ResultHeader />
@@ -284,10 +253,7 @@ const Index = () => {
         ) : (
           <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
             <button 
-              onClick={() => {
-                setResultData(null);
-                setShowCelebration(false);
-              }}
+              onClick={() => setResultData(null)}
               className="text-primary hover:text-primary/80 text-sm print:hidden flex items-center gap-1 transition-all duration-200 font-medium hover:translate-x-[-4px]"
             >
               ← Back to Search
