@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Trash2, History, UserX, Loader2, Download } from "lucide-react";
+import { AlertTriangle, Trash2, History, UserX, Loader2, Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 const SettingsSection = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [showDeleteAdminDialog, setShowDeleteAdminDialog] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [resetPassword, setResetPassword] = useState("");
   const [resetConfirmText, setResetConfirmText] = useState("");
   const [resetCheckbox, setResetCheckbox] = useState(false);
@@ -31,8 +32,22 @@ const SettingsSection = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [resetError, setResetError] = useState("");
   const [deleteAdminError, setDeleteAdminError] = useState("");
+  const [importError, setImportError] = useState("");
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [backupPreview, setBackupPreview] = useState<{
+    exportedAt: string;
+    summary: {
+      studentsCount: number;
+      subjectsCount: number;
+      examsCount: number;
+      marksCount: number;
+      ranksCount: number;
+      activityLogsCount: number;
+    };
+  } | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -94,6 +109,112 @@ const SettingsSection = () => {
       });
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError("");
+    setBackupPreview(null);
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // Validate backup structure
+      if (!data.version || !data.data || !data.summary) {
+        throw new Error("Invalid backup file format");
+      }
+
+      if (!data.data.students || !data.data.subjects || !data.data.exams) {
+        throw new Error("Backup file is missing required data tables");
+      }
+
+      setBackupFile(file);
+      setBackupPreview({
+        exportedAt: data.exportedAt,
+        summary: data.summary,
+      });
+      setShowImportDialog(true);
+    } catch (error: any) {
+      setImportError(error.message || "Failed to parse backup file");
+      toast({
+        title: "Invalid Backup File",
+        description: error.message || "Could not read the backup file",
+        variant: "destructive",
+      });
+    }
+
+    // Reset file input
+    event.target.value = "";
+  };
+
+  const handleImportData = async () => {
+    if (!backupFile) return;
+
+    setIsImporting(true);
+    setImportError("");
+
+    try {
+      const text = await backupFile.text();
+      const backupData = JSON.parse(text);
+
+      // Clear existing data first (respecting foreign keys)
+      await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('deployment_status').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('ranks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      await supabase.from('exams').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+      // Import data in correct order (respecting foreign keys)
+      // 1. Independent tables first
+      if (backupData.data.subjects?.length > 0) {
+        const { error } = await supabase.from('subjects').insert(backupData.data.subjects);
+        if (error) throw new Error(`Failed to import subjects: ${error.message}`);
+      }
+
+      if (backupData.data.students?.length > 0) {
+        const { error } = await supabase.from('students').insert(backupData.data.students);
+        if (error) throw new Error(`Failed to import students: ${error.message}`);
+      }
+
+      if (backupData.data.exams?.length > 0) {
+        const { error } = await supabase.from('exams').insert(backupData.data.exams);
+        if (error) throw new Error(`Failed to import exams: ${error.message}`);
+      }
+
+      // 2. Dependent tables
+      if (backupData.data.marks?.length > 0) {
+        const { error } = await supabase.from('marks').insert(backupData.data.marks);
+        if (error) throw new Error(`Failed to import marks: ${error.message}`);
+      }
+
+      if (backupData.data.ranks?.length > 0) {
+        const { error } = await supabase.from('ranks').insert(backupData.data.ranks);
+        if (error) throw new Error(`Failed to import ranks: ${error.message}`);
+      }
+
+      // Activity logs are optional - don't fail if they can't be imported
+      if (backupData.data.activity_logs?.length > 0) {
+        await supabase.from('activity_logs').insert(backupData.data.activity_logs);
+      }
+
+      toast({
+        title: "Import Successful",
+        description: `Restored ${backupData.summary.studentsCount} students, ${backupData.summary.examsCount} exams, ${backupData.summary.marksCount} marks.`,
+      });
+
+      setShowImportDialog(false);
+      setBackupFile(null);
+      setBackupPreview(null);
+    } catch (error: any) {
+      setImportError(error.message || "Failed to import data");
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -228,22 +349,54 @@ const SettingsSection = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Export all students, subjects, exams, marks, ranks, and activity logs as a JSON file.
-          </p>
-          <Button onClick={handleExportData} disabled={isExporting}>
-            {isExporting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Exporting...
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Download Full Backup
-              </>
-            )}
-          </Button>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Export Data</p>
+              <p className="text-xs text-muted-foreground">
+                Download all data as a JSON backup file.
+              </p>
+              <Button onClick={handleExportData} disabled={isExporting} className="w-full">
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Backup
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Import Data</p>
+              <p className="text-xs text-muted-foreground">
+                Restore data from a backup JSON file.
+              </p>
+              <div className="relative">
+                <Input
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="backup-file-input"
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => document.getElementById('backup-file-input')?.click()}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Import Backup
+                </Button>
+              </div>
+              {importError && (
+                <p className="text-xs text-destructive">{importError}</p>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -499,6 +652,73 @@ const SettingsSection = () => {
                 </>
               ) : (
                 "Reset Everything"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Import Confirmation Dialog */}
+      <AlertDialog open={showImportDialog} onOpenChange={(open) => {
+        setShowImportDialog(open);
+        if (!open) {
+          setBackupFile(null);
+          setBackupPreview(null);
+          setImportError("");
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Restore from Backup
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>You are about to restore data from a backup file.</p>
+              {backupPreview && (
+                <div className="bg-muted p-3 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Backup Details:</p>
+                  <p className="text-xs text-muted-foreground">
+                    Created: {new Date(backupPreview.exportedAt).toLocaleString()}
+                  </p>
+                  <ul className="text-xs space-y-1">
+                    <li>• {backupPreview.summary.studentsCount} students</li>
+                    <li>• {backupPreview.summary.subjectsCount} subjects</li>
+                    <li>• {backupPreview.summary.examsCount} exams</li>
+                    <li>• {backupPreview.summary.marksCount} marks</li>
+                    <li>• {backupPreview.summary.ranksCount} ranks</li>
+                  </ul>
+                </div>
+              )}
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  This will replace ALL current data with the backup data. This action cannot be undone!
+                </AlertDescription>
+              </Alert>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {importError && (
+            <Alert variant="destructive">
+              <AlertDescription>{importError}</AlertDescription>
+            </Alert>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleImportData}
+              disabled={isImporting}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                "Restore Data"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
