@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Trash2, History, UserX, Loader2 } from "lucide-react";
+import { AlertTriangle, Trash2, History, UserX, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,11 +30,72 @@ const SettingsSection = () => {
   const [deleteAdminConfirmText, setDeleteAdminConfirmText] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [resetError, setResetError] = useState("");
   const [deleteAdminError, setDeleteAdminError] = useState("");
   
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    try {
+      // Fetch all data from all tables
+      const [studentsRes, subjectsRes, examsRes, marksRes, ranksRes, activityLogsRes] = await Promise.all([
+        supabase.from('students').select('*'),
+        supabase.from('subjects').select('*'),
+        supabase.from('exams').select('*'),
+        supabase.from('marks').select('*'),
+        supabase.from('ranks').select('*'),
+        supabase.from('activity_logs').select('*'),
+      ]);
+
+      const backupData = {
+        exportedAt: new Date().toISOString(),
+        version: "1.0",
+        data: {
+          students: studentsRes.data || [],
+          subjects: subjectsRes.data || [],
+          exams: examsRes.data || [],
+          marks: marksRes.data || [],
+          ranks: ranksRes.data || [],
+          activity_logs: activityLogsRes.data || [],
+        },
+        summary: {
+          studentsCount: studentsRes.data?.length || 0,
+          subjectsCount: subjectsRes.data?.length || 0,
+          examsCount: examsRes.data?.length || 0,
+          marksCount: marksRes.data?.length || 0,
+          ranksCount: ranksRes.data?.length || 0,
+          activityLogsCount: activityLogsRes.data?.length || 0,
+        }
+      };
+
+      // Create and download the JSON file
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `rbli-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Backup Downloaded",
+        description: `Exported ${backupData.summary.studentsCount} students, ${backupData.summary.examsCount} exams, ${backupData.summary.marksCount} marks.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to export data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const canReset = 
     resetPassword.length >= 6 && 
@@ -154,6 +215,37 @@ const SettingsSection = () => {
         <h2 className="text-2xl font-bold">Settings</h2>
         <p className="text-muted-foreground">System configuration and maintenance</p>
       </div>
+
+      {/* Backup & Export */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="h-5 w-5" />
+            Backup & Export
+          </CardTitle>
+          <CardDescription>
+            Download a complete backup of all your data before making any changes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Export all students, subjects, exams, marks, ranks, and activity logs as a JSON file.
+          </p>
+          <Button onClick={handleExportData} disabled={isExporting}>
+            {isExporting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Exporting...
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Download Full Backup
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Activity Logs Info */}
       <Card>
