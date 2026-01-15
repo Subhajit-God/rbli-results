@@ -48,6 +48,14 @@ const SettingsSection = () => {
       activityLogsCount: number;
     };
   } | null>(null);
+  const [importSelections, setImportSelections] = useState({
+    students: true,
+    subjects: true,
+    exams: true,
+    marks: true,
+    ranks: true,
+    activityLogs: false,
+  });
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -154,6 +162,13 @@ const SettingsSection = () => {
   const handleImportData = async () => {
     if (!backupFile) return;
 
+    // Check if at least one table is selected
+    const hasSelection = Object.values(importSelections).some(v => v);
+    if (!hasSelection) {
+      setImportError("Please select at least one table to restore");
+      return;
+    }
+
     setIsImporting(true);
     setImportError("");
 
@@ -161,56 +176,103 @@ const SettingsSection = () => {
       const text = await backupFile.text();
       const backupData = JSON.parse(text);
 
-      // Clear existing data first (respecting foreign keys)
-      await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('deployment_status').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('ranks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-      await supabase.from('exams').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      // Clear and import selected tables (respecting foreign keys)
+      // First clear dependent tables if selected
+      if (importSelections.activityLogs) {
+        await supabase.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      if (importSelections.ranks) {
+        await supabase.from('ranks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      if (importSelections.marks) {
+        await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      // Then clear independent tables
+      if (importSelections.students) {
+        // First clear marks/ranks that depend on students
+        if (!importSelections.marks) {
+          await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        if (!importSelections.ranks) {
+          await supabase.from('ranks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        await supabase.from('students').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      if (importSelections.subjects) {
+        // First clear marks that depend on subjects
+        if (!importSelections.marks) {
+          await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        await supabase.from('subjects').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      if (importSelections.exams) {
+        // First clear marks/ranks that depend on exams
+        if (!importSelections.marks) {
+          await supabase.from('marks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        if (!importSelections.ranks) {
+          await supabase.from('ranks').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        await supabase.from('deployment_status').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        await supabase.from('exams').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
 
       // Import data in correct order (respecting foreign keys)
+      const imported: string[] = [];
+
       // 1. Independent tables first
-      if (backupData.data.subjects?.length > 0) {
+      if (importSelections.subjects && backupData.data.subjects?.length > 0) {
         const { error } = await supabase.from('subjects').insert(backupData.data.subjects);
         if (error) throw new Error(`Failed to import subjects: ${error.message}`);
+        imported.push(`${backupData.data.subjects.length} subjects`);
       }
 
-      if (backupData.data.students?.length > 0) {
+      if (importSelections.students && backupData.data.students?.length > 0) {
         const { error } = await supabase.from('students').insert(backupData.data.students);
         if (error) throw new Error(`Failed to import students: ${error.message}`);
+        imported.push(`${backupData.data.students.length} students`);
       }
 
-      if (backupData.data.exams?.length > 0) {
+      if (importSelections.exams && backupData.data.exams?.length > 0) {
         const { error } = await supabase.from('exams').insert(backupData.data.exams);
         if (error) throw new Error(`Failed to import exams: ${error.message}`);
+        imported.push(`${backupData.data.exams.length} exams`);
       }
 
       // 2. Dependent tables
-      if (backupData.data.marks?.length > 0) {
+      if (importSelections.marks && backupData.data.marks?.length > 0) {
         const { error } = await supabase.from('marks').insert(backupData.data.marks);
         if (error) throw new Error(`Failed to import marks: ${error.message}`);
+        imported.push(`${backupData.data.marks.length} marks`);
       }
 
-      if (backupData.data.ranks?.length > 0) {
+      if (importSelections.ranks && backupData.data.ranks?.length > 0) {
         const { error } = await supabase.from('ranks').insert(backupData.data.ranks);
         if (error) throw new Error(`Failed to import ranks: ${error.message}`);
+        imported.push(`${backupData.data.ranks.length} ranks`);
       }
 
-      // Activity logs are optional - don't fail if they can't be imported
-      if (backupData.data.activity_logs?.length > 0) {
+      if (importSelections.activityLogs && backupData.data.activity_logs?.length > 0) {
         await supabase.from('activity_logs').insert(backupData.data.activity_logs);
+        imported.push(`${backupData.data.activity_logs.length} activity logs`);
       }
 
       toast({
         title: "Import Successful",
-        description: `Restored ${backupData.summary.studentsCount} students, ${backupData.summary.examsCount} exams, ${backupData.summary.marksCount} marks.`,
+        description: `Restored ${imported.join(', ')}.`,
       });
 
       setShowImportDialog(false);
       setBackupFile(null);
       setBackupPreview(null);
+      setImportSelections({
+        students: true,
+        subjects: true,
+        exams: true,
+        marks: true,
+        ranks: true,
+        activityLogs: false,
+      });
     } catch (error: any) {
       setImportError(error.message || "Failed to import data");
     } finally {
@@ -673,29 +735,103 @@ const SettingsSection = () => {
               <Upload className="h-5 w-5" />
               Restore from Backup
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>You are about to restore data from a backup file.</p>
-              {backupPreview && (
-                <div className="bg-muted p-3 rounded-lg space-y-2">
-                  <p className="text-sm font-medium">Backup Details:</p>
-                  <p className="text-xs text-muted-foreground">
-                    Created: {new Date(backupPreview.exportedAt).toLocaleString()}
-                  </p>
-                  <ul className="text-xs space-y-1">
-                    <li>• {backupPreview.summary.studentsCount} students</li>
-                    <li>• {backupPreview.summary.subjectsCount} subjects</li>
-                    <li>• {backupPreview.summary.examsCount} exams</li>
-                    <li>• {backupPreview.summary.marksCount} marks</li>
-                    <li>• {backupPreview.summary.ranksCount} ranks</li>
-                  </ul>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Select which tables to restore from the backup file.</p>
+                {backupPreview && (
+                  <div className="bg-muted p-3 rounded-lg space-y-2">
+                    <p className="text-sm font-medium text-foreground">Backup Details:</p>
+                    <p className="text-xs text-muted-foreground">
+                      Created: {new Date(backupPreview.exportedAt).toLocaleString()}
+                    </p>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Select tables to restore:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="import-students"
+                        checked={importSelections.students}
+                        onCheckedChange={(checked) => 
+                          setImportSelections(prev => ({ ...prev, students: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="import-students" className="text-sm">
+                        Students ({backupPreview?.summary.studentsCount || 0})
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="import-subjects"
+                        checked={importSelections.subjects}
+                        onCheckedChange={(checked) => 
+                          setImportSelections(prev => ({ ...prev, subjects: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="import-subjects" className="text-sm">
+                        Subjects ({backupPreview?.summary.subjectsCount || 0})
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="import-exams"
+                        checked={importSelections.exams}
+                        onCheckedChange={(checked) => 
+                          setImportSelections(prev => ({ ...prev, exams: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="import-exams" className="text-sm">
+                        Exams ({backupPreview?.summary.examsCount || 0})
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="import-marks"
+                        checked={importSelections.marks}
+                        onCheckedChange={(checked) => 
+                          setImportSelections(prev => ({ ...prev, marks: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="import-marks" className="text-sm">
+                        Marks ({backupPreview?.summary.marksCount || 0})
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="import-ranks"
+                        checked={importSelections.ranks}
+                        onCheckedChange={(checked) => 
+                          setImportSelections(prev => ({ ...prev, ranks: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="import-ranks" className="text-sm">
+                        Ranks ({backupPreview?.summary.ranksCount || 0})
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="import-activity-logs"
+                        checked={importSelections.activityLogs}
+                        onCheckedChange={(checked) => 
+                          setImportSelections(prev => ({ ...prev, activityLogs: checked as boolean }))
+                        }
+                      />
+                      <label htmlFor="import-activity-logs" className="text-sm">
+                        Activity Logs ({backupPreview?.summary.activityLogsCount || 0})
+                      </label>
+                    </div>
+                  </div>
                 </div>
-              )}
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  This will replace ALL current data with the backup data. This action cannot be undone!
-                </AlertDescription>
-              </Alert>
+
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Selected tables will be cleared and replaced with backup data. This cannot be undone!
+                  </AlertDescription>
+                </Alert>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
 
