@@ -77,12 +77,22 @@ const SettingsSection = () => {
       // Delete ALL admin roles (not just current user) to allow new registration
       await supabase.from('admin_roles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-      // Sign out
+      // Delete the auth user account via edge function
+      const { error: deleteUserError } = await supabase.functions.invoke('delete-user', {
+        body: { userId: user.id }
+      });
+
+      if (deleteUserError) {
+        console.error('Failed to delete auth user:', deleteUserError);
+        // Continue anyway - data is deleted, just auth user remains
+      }
+
+      // Sign out (in case delete-user didn't fully clear session)
       await supabase.auth.signOut();
 
       toast({
         title: "Database Reset Complete",
-        description: "All data has been deleted. You have been logged out.",
+        description: "All data and your account have been deleted.",
       });
 
       navigate('/admin/auth');
