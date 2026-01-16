@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import schoolLogo from "@/assets/school-logo.png";
 import { isAbsent, isExempt } from "@/components/AbsentBadge";
+import QRCode from "react-qr-code";
 
 interface StudentDetails {
   name: string;
@@ -39,6 +40,7 @@ interface ResultCardPDFProps {
   student: StudentDetails;
   marks: MarksRow[];
   summary: ResultSummary;
+  examId?: string;
 }
 
 const getGradeColor = (grade: string) => {
@@ -142,7 +144,10 @@ const SchoolStamp = () => (
   </div>
 );
 
-const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps) => {
+const ResultCardPDF = ({ examName, student, marks, summary, examId }: ResultCardPDFProps) => {
+  // Generate verification URL
+  const baseUrl = "https://rbli-results.lovable.app";
+  const verificationUrl = `${baseUrl}/?sid=${encodeURIComponent(student.studentId)}${examId ? `&eid=${encodeURIComponent(examId)}` : ''}`;
   return (
     <div 
       id="result-pdf" 
@@ -525,23 +530,65 @@ const ResultCardPDF = ({ examName, student, marks, summary }: ResultCardPDFProps
       {/* Official School Stamp */}
       <SchoolStamp />
 
-      {/* Footer */}
+      {/* Footer with QR Code */}
       <div 
         style={{
           marginTop: '14px',
           paddingTop: '8px',
           borderTop: '1px solid #e2e8f0',
-          textAlign: 'center',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
           position: 'relative',
           zIndex: 1,
         }}
       >
-        <p style={{ fontSize: '7pt', color: '#6b7280', margin: 0, fontStyle: 'italic' }}>
-          This is a computer-generated result card. Verified and published by the institution.
-        </p>
-        <p style={{ fontSize: '7pt', color: '#9ca3af', margin: '2px 0 0 0' }}>
-          Excellence in Education Since 1925 | Made With ❤️ By Subhajit Das (ID: 04070122000103)
-        </p>
+        {/* QR Code Section */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <div 
+            style={{
+              padding: '4px',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+            }}
+          >
+            <QRCode 
+              value={verificationUrl}
+              size={50}
+              level="M"
+              style={{ display: 'block' }}
+            />
+          </div>
+          <div style={{ fontSize: '6pt', color: '#6b7280' }}>
+            <p style={{ margin: 0, fontWeight: 600 }}>Scan to Verify</p>
+            <p style={{ margin: '1px 0 0 0', fontStyle: 'italic' }}>Authenticity Check</p>
+          </div>
+        </div>
+
+        {/* Center Text */}
+        <div style={{ textAlign: 'center', flex: 1 }}>
+          <p style={{ fontSize: '7pt', color: '#6b7280', margin: 0, fontStyle: 'italic' }}>
+            This is a computer-generated result card. Verified and published by the institution.
+          </p>
+          <p style={{ fontSize: '7pt', color: '#9ca3af', margin: '2px 0 0 0' }}>
+            Excellence in Education Since 1925 | Made With ❤️ By Subhajit Das (ID: 04070122000103)
+          </p>
+        </div>
+
+        {/* Verification ID */}
+        <div style={{ textAlign: 'right', fontSize: '6pt', color: '#9ca3af' }}>
+          <p style={{ margin: 0 }}>Verification ID:</p>
+          <p style={{ margin: '1px 0 0 0', fontFamily: 'monospace', fontWeight: 600 }}>
+            {student.studentId}
+          </p>
+        </div>
       </div>
     </div>
   );

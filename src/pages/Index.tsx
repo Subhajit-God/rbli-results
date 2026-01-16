@@ -25,6 +25,7 @@ interface ResultData {
     motherName: string;
   };
   examName: string;
+  examId: string;
   marks: Array<{
     subject: string;
     marks1: string;
@@ -156,6 +157,7 @@ const Index = () => {
           motherName: student.mother_name,
         },
         examName: exam.name,
+        examId: exam.id,
         marks: formattedMarks,
         summary: {
           grandTotal: rankData?.total_marks || 0,
@@ -193,6 +195,7 @@ const Index = () => {
         <div id="result-pdf-container" className="hidden print:block">
           <ResultCardPDF
             examName={resultData.examName}
+            examId={resultData.examId}
             student={resultData.student}
             marks={resultData.marks}
             summary={resultData.summary}
