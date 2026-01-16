@@ -179,19 +179,45 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Print styles for A4 Landscape PDF */
+  /* Print styles for A4 Landscape PDF - 297mm × 210mm */
   @media print {
     @page {
-      size: A4 landscape;
-      margin: 8mm;
+      size: 297mm 210mm landscape;
+      margin: 0;
+    }
+
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
     }
 
     html, body {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
+      width: 297mm !important;
+      height: 210mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
       background: white !important;
       color: black !important;
-      font-size: 11px !important;
+      font-size: 10pt !important;
+      overflow: visible !important;
+    }
+
+    /* Hide all screen elements */
+    body > *:not(#result-pdf-container) {
+      display: none !important;
+    }
+
+    #result-pdf-container {
+      display: block !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 297mm !important;
+      height: 210mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
     }
 
     .print\:hidden {
@@ -202,7 +228,54 @@
       display: block !important;
     }
 
-    /* Result card print optimizations */
+    /* Result Card PDF Container */
+    .result-card-pdf-container {
+      width: 297mm !important;
+      min-height: 210mm !important;
+      max-height: 210mm !important;
+      margin: 0 !important;
+      padding: 8mm 10mm !important;
+      background: white !important;
+      color: black !important;
+      font-family: "Times New Roman", Times, Georgia, serif !important;
+      font-size: 10pt !important;
+      box-sizing: border-box !important;
+      page-break-after: always !important;
+      page-break-inside: avoid !important;
+      overflow: hidden !important;
+    }
+
+    /* Ensure tables don't break across pages */
+    table {
+      page-break-inside: avoid !important;
+    }
+
+    thead {
+      display: table-header-group !important;
+    }
+
+    tbody {
+      page-break-inside: avoid !important;
+    }
+
+    tr {
+      page-break-inside: avoid !important;
+      page-break-after: auto !important;
+    }
+
+    /* Summary section should not break */
+    .result-card-pdf-container > div {
+      page-break-inside: avoid !important;
+    }
+
+    /* School stamp print optimization */
+    .school-stamp {
+      opacity: 0.2 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Legacy result card print optimizations */
     .result-card-print {
       background: white !important;
       color: black !important;
@@ -376,22 +449,6 @@
     }
 
     #result-pdf {
-      display: block !important;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 9999;
-      background: white;
-    }
-
-    /* Hide everything except the PDF result */
-    body > *:not(#result-pdf-container) {
-      display: none !important;
-    }
-
-    #result-pdf-container {
       display: block !important;
     }
   }
