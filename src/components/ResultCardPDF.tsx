@@ -145,9 +145,9 @@ const SchoolStamp = () => (
 );
 
 const ResultCardPDF = ({ examName, student, marks, summary, examId }: ResultCardPDFProps) => {
-  // Generate verification URL
+  // Generate verification URL - points to /verify page
   const baseUrl = "https://rbli-results.lovable.app";
-  const verificationUrl = `${baseUrl}/?sid=${encodeURIComponent(student.studentId)}${examId ? `&eid=${encodeURIComponent(examId)}` : ''}`;
+  const verificationUrl = `${baseUrl}/verify?sid=${encodeURIComponent(student.studentId)}${examId ? `&eid=${encodeURIComponent(examId)}` : ''}`;
   return (
     <div 
       id="result-pdf" 
