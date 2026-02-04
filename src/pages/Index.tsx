@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -49,17 +49,145 @@ interface ResultData {
 }
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [autoLookupAttempted, setAutoLookupAttempted] = useState(false);
   const { toast } = useToast();
+
+  // Get URL params for auto-lookup
+  const sidParam = searchParams.get("sid");
+  const eidParam = searchParams.get("eid");
 
   // Simulate initial page load
   useEffect(() => {
     const timer = setTimeout(() => setIsInitialLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch result by student ID and exam ID (for URL params / QR code)
+  const fetchResultByIds = useCallback(async (studentId: string, examId: string) => {
+    setIsLoading(true);
+    setError(null);
+    setResultData(null);
+
+    try {
+      // Find student by student_id
+      const { data: student, error: studentError } = await supabase
+        .from('students')
+        .select('*')
+        .eq('student_id', studentId)
+        .maybeSingle();
+
+      if (studentError) throw studentError;
+
+      if (!student) {
+        setError("Student not found. Please check the Student ID.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if the exam is deployed
+      const { data: exam, error: examError } = await supabase
+        .from('exams')
+        .select('*')
+        .eq('id', examId)
+        .eq('is_deployed', true)
+        .maybeSingle();
+
+      if (examError) throw examError;
+
+      if (!exam) {
+        setError("Exam not found or result not published yet.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Get marks for this student and exam
+      const { data: marksData, error: marksError } = await supabase
+        .from('marks')
+        .select(`
+          *,
+          subjects:subject_id (*)
+        `)
+        .eq('student_id', student.id)
+        .eq('exam_id', exam.id);
+
+      if (marksError) throw marksError;
+
+      // Get rank
+      const { data: rankData, error: rankError } = await supabase
+        .from('ranks')
+        .select('*')
+        .eq('student_id', student.id)
+        .eq('exam_id', exam.id)
+        .single();
+
+      if (rankError && rankError.code !== 'PGRST116') throw rankError;
+
+      // Format marks for display
+      const formattedMarks = (marksData || []).map((mark: any) => {
+        const subject = mark.subjects;
+        const m1 = mark.marks_1 === 'AB' || mark.marks_1 === 'EX' ? 0 : parseFloat(mark.marks_1 || '0');
+        const m2 = mark.marks_2 === 'AB' || mark.marks_2 === 'EX' ? 0 : parseFloat(mark.marks_2 || '0');
+        const m3 = mark.marks_3 === 'AB' || mark.marks_3 === 'EX' ? 0 : parseFloat(mark.marks_3 || '0');
+        const total = m1 + m2 + m3;
+        const fullTotal = subject.full_marks_1 + subject.full_marks_2 + subject.full_marks_3;
+        
+        return {
+          subject: subject.name,
+          marks1: mark.marks_1 || '-',
+          fullMarks1: subject.full_marks_1,
+          marks2: mark.marks_2 || '-',
+          fullMarks2: subject.full_marks_2,
+          marks3: mark.marks_3 || '-',
+          fullMarks3: subject.full_marks_3,
+          total,
+          fullTotal,
+          percentage: fullTotal > 0 ? (total / fullTotal) * 100 : 0,
+        };
+      });
+
+      setResultData({
+        student: {
+          name: student.name,
+          classNumber: student.class_number,
+          section: student.section,
+          rollNumber: student.roll_number,
+          studentId: student.student_id,
+          fatherName: student.father_name,
+          motherName: student.mother_name,
+        },
+        examName: exam.name,
+        examId: exam.id,
+        marks: formattedMarks,
+        summary: {
+          grandTotal: rankData?.total_marks || 0,
+          fullMarks: formattedMarks.reduce((sum, m) => sum + m.fullTotal, 0),
+          percentage: rankData?.percentage || 0,
+          grade: rankData?.grade || 'D',
+          isPassed: rankData?.is_passed || false,
+          rank: rankData?.rank || 0,
+        },
+      });
+
+    } catch (err: any) {
+      console.error('Error fetching result:', err);
+      setError("An error occurred while fetching the result. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Auto-lookup when URL has sid and eid params
+  useEffect(() => {
+    if (sidParam && eidParam && !autoLookupAttempted && !isInitialLoading) {
+      setAutoLookupAttempted(true);
+      fetchResultByIds(sidParam, eidParam);
+    }
+  }, [sidParam, eidParam, autoLookupAttempted, isInitialLoading, fetchResultByIds]);
 
   const handleLookup = async (data: { studentId: string; classNumber: string; dob: Date }) => {
     setIsLoading(true);
