@@ -18,6 +18,7 @@ import {
   Rocket,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,8 +39,9 @@ import MarksSection from "@/components/admin/MarksSection";
 import RanksSection from "@/components/admin/RanksSection";
 import DeploySection from "@/components/admin/DeploySection";
 import SettingsSection from "@/components/admin/SettingsSection";
+import VerifySection from "@/components/admin/VerifySection";
 
-type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "settings";
+type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings";
 
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: GraduationCap },
@@ -49,6 +51,7 @@ const navItems = [
   { id: "marks" as Section, label: "Marks Entry", icon: ClipboardList },
   { id: "ranks" as Section, label: "Ranks", icon: Award },
   { id: "deploy" as Section, label: "Deploy", icon: Rocket },
+  { id: "verify" as Section, label: "Verify", icon: ShieldCheck },
   { id: "settings" as Section, label: "Settings", icon: Settings },
 ];
 
@@ -183,6 +186,8 @@ const AdminDashboard = () => {
         return <RanksSection />;
       case "deploy":
         return <DeploySection />;
+      case "verify":
+        return <VerifySection />;
       case "settings":
         return <SettingsSection />;
       default:
