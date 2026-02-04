@@ -83,23 +83,23 @@ const QRScanner = ({ onScanSuccess, onScanError }: QRScannerProps) => {
 
   return (
     <Card className="w-full max-w-md mx-auto overflow-hidden">
-      <CardContent className="p-4">
-        <div className="space-y-4">
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Scanner Container */}
           <div 
             ref={containerRef}
-            className="relative aspect-square w-full max-w-[300px] mx-auto bg-muted rounded-lg overflow-hidden"
+            className="relative aspect-square w-full max-w-[280px] sm:max-w-[300px] mx-auto bg-muted rounded-lg overflow-hidden"
           >
             <div id="qr-reader" className="w-full h-full" />
             
             {!isScanning && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
                 {hasPermission === false ? (
-                  <CameraOff className="h-12 w-12 text-muted-foreground mb-2" />
+                  <CameraOff className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-2" />
                 ) : (
-                  <Camera className="h-12 w-12 text-muted-foreground mb-2" />
+                  <Camera className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-2" />
                 )}
-                <p className="text-sm text-muted-foreground text-center px-4">
+                <p className="text-xs sm:text-sm text-muted-foreground text-center px-4">
                   {hasPermission === false 
                     ? "Camera access denied" 
                     : "Initializing camera..."}
@@ -110,26 +110,26 @@ const QRScanner = ({ onScanSuccess, onScanError }: QRScannerProps) => {
 
           {/* Error Message */}
           {error && (
-            <div className="text-center p-3 bg-destructive/10 rounded-lg">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="text-center p-2 sm:p-3 bg-destructive/10 rounded-lg">
+              <p className="text-xs sm:text-sm text-destructive">{error}</p>
             </div>
           )}
 
           {/* Controls */}
-          <div className="flex justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {!isScanning ? (
-              <Button onClick={startScanner} className="gap-2">
+              <Button onClick={startScanner} size="sm" className="gap-2 text-xs sm:text-sm">
                 <Camera className="h-4 w-4" />
                 Start Scanner
               </Button>
             ) : (
-              <Button variant="outline" onClick={stopScanner} className="gap-2">
+              <Button variant="outline" onClick={stopScanner} size="sm" className="gap-2 text-xs sm:text-sm">
                 <CameraOff className="h-4 w-4" />
                 Stop Scanner
               </Button>
             )}
             {error && (
-              <Button variant="outline" onClick={startScanner} className="gap-2">
+              <Button variant="outline" onClick={startScanner} size="sm" className="gap-2 text-xs sm:text-sm">
                 <RefreshCw className="h-4 w-4" />
                 Retry
               </Button>
@@ -137,7 +137,7 @@ const QRScanner = ({ onScanSuccess, onScanError }: QRScannerProps) => {
           </div>
 
           {/* Instructions */}
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-[10px] sm:text-xs text-center text-muted-foreground">
             Position the QR code within the frame to scan
           </p>
         </div>

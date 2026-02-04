@@ -227,85 +227,85 @@ const Verify = () => {
   // Verified state
   if (verified && data) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4">
-        <div className="max-w-2xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-3 sm:p-4">
+        <div className="max-w-2xl mx-auto space-y-4 sm:space-y-6">
           {/* Verification Status Banner */}
           <Card className="border-green-500/50 bg-green-50/50 dark:bg-green-950/20">
-            <CardContent className="flex items-center gap-4 py-6">
-              <div className="p-3 rounded-full bg-green-500/20">
-                <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+            <CardContent className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 py-4 sm:py-6">
+              <div className="p-2 sm:p-3 rounded-full bg-green-500/20">
+                <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10 text-green-600 dark:text-green-400" />
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-green-700 dark:text-green-400">Result Verified</h2>
-                <p className="text-sm text-green-600/80 dark:text-green-400/80">
+              <div className="text-center sm:text-left">
+                <h2 className="text-lg sm:text-xl font-bold text-green-700 dark:text-green-400">Result Verified</h2>
+                <p className="text-xs sm:text-sm text-green-600/80 dark:text-green-400/80">
                   This result card is authentic and issued by the institution.
                 </p>
               </div>
-              <Shield className="h-8 w-8 text-green-500/50 ml-auto" />
+              <Shield className="hidden sm:block h-8 w-8 text-green-500/50 ml-auto" />
             </CardContent>
           </Card>
 
           {/* School Header */}
           <Card>
             <CardHeader className="text-center pb-2">
-              <div className="flex justify-center mb-3">
-                <img src={schoolLogo} alt="School Logo" className="h-16 w-16 object-contain" />
+              <div className="flex justify-center mb-2 sm:mb-3">
+                <img src={schoolLogo} alt="School Logo" className="h-12 w-12 sm:h-16 sm:w-16 object-contain" />
               </div>
-              <CardTitle className="text-lg">RAMJIBANPUR BABULAL INSTITUTION</CardTitle>
-              <p className="text-xs text-muted-foreground">Ramjibanpur, West Bengal</p>
+              <CardTitle className="text-base sm:text-lg">RAMJIBANPUR BABULAL INSTITUTION</CardTitle>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Ramjibanpur, West Bengal</p>
             </CardHeader>
           </Card>
 
           {/* Student & Exam Details */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <GraduationCap className="h-5 w-5" />
+              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5" />
                 Student Information
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <CardContent className="space-y-3 sm:space-y-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
-                  <p className="text-muted-foreground">Name</p>
-                  <p className="font-semibold">{data.student.name}</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Name</p>
+                  <p className="font-semibold truncate">{data.student.name}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Student ID</p>
-                  <p className="font-mono font-semibold">{data.student.studentId}</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Student ID</p>
+                  <p className="font-mono font-semibold text-[10px] sm:text-sm truncate">{data.student.studentId}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Class & Section</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Class & Section</p>
                   <p className="font-semibold">Class {data.student.class} - Section {data.student.section}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Roll Number</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Roll Number</p>
                   <p className="font-semibold">{data.student.rollNumber}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Father's Name</p>
-                  <p className="font-semibold">{data.student.fatherName}</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Father's Name</p>
+                  <p className="font-semibold truncate">{data.student.fatherName}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Mother's Name</p>
-                  <p className="font-semibold">{data.student.motherName}</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Mother's Name</p>
+                  <p className="font-semibold truncate">{data.student.motherName}</p>
                 </div>
               </div>
 
               <Separator />
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
-                  <p className="text-muted-foreground">Examination</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Examination</p>
                   <p className="font-semibold">{data.exam.name}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground">Academic Year</p>
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Academic Year</p>
                   <p className="font-semibold">{data.exam.academicYear}</p>
                 </div>
                 <div className="col-span-2">
-                  <p className="text-muted-foreground">Published On</p>
-                  <p className="font-semibold">
+                  <p className="text-muted-foreground text-[10px] sm:text-xs">Published On</p>
+                  <p className="font-semibold text-xs sm:text-sm">
                     {new Date(data.exam.deployedAt).toLocaleDateString("en-IN", {
                       day: "numeric",
                       month: "long",
@@ -322,36 +322,36 @@ const Verify = () => {
           {/* Result Summary */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Result Summary</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Result Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-primary">{data.rank.totalMarks}</p>
-                  <p className="text-xs text-muted-foreground">Total Marks</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+                <div className="text-center p-2 sm:p-4 rounded-lg bg-muted/50">
+                  <p className="text-lg sm:text-2xl font-bold text-primary">{data.rank.totalMarks}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Total Marks</p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-primary">{data.rank.percentage.toFixed(2)}%</p>
-                  <p className="text-xs text-muted-foreground">Percentage</p>
+                <div className="text-center p-2 sm:p-4 rounded-lg bg-muted/50">
+                  <p className="text-lg sm:text-2xl font-bold text-primary">{data.rank.percentage.toFixed(2)}%</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Percentage</p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <Badge className={`${getGradeColor(data.rank.grade)} text-white text-lg px-3 py-1`}>
+                <div className="text-center p-2 sm:p-4 rounded-lg bg-muted/50">
+                  <Badge className={`${getGradeColor(data.rank.grade)} text-white text-sm sm:text-lg px-2 sm:px-3 py-0.5 sm:py-1`}>
                     {data.rank.grade}
                   </Badge>
-                  <p className="text-xs text-muted-foreground mt-2">Grade</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 sm:mt-2">Grade</p>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold text-primary">
+                <div className="text-center p-2 sm:p-4 rounded-lg bg-muted/50">
+                  <p className="text-lg sm:text-2xl font-bold text-primary">
                     {data.rank.rank ? `#${data.rank.rank}` : "N/A"}
                   </p>
-                  <p className="text-xs text-muted-foreground">Class Rank</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">Class Rank</p>
                 </div>
               </div>
 
-              <div className="mt-4 text-center">
+              <div className="mt-3 sm:mt-4 text-center">
                 <Badge 
                   variant={data.rank.isPassed ? "default" : "destructive"}
-                  className="text-sm px-4 py-1"
+                  className="text-xs sm:text-sm px-3 sm:px-4 py-0.5 sm:py-1"
                 >
                   {data.rank.isPassed ? "PASSED" : "FAILED"}
                 </Badge>
@@ -360,19 +360,19 @@ const Verify = () => {
           </Card>
 
           {/* Footer Actions */}
-          <div className="text-center space-y-2 py-4">
-            <p className="text-xs text-muted-foreground">
+          <div className="text-center space-y-2 py-2 sm:py-4">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               For detailed marks, please use the Result Portal.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <Button asChild variant="default" size="sm">
+              <Button asChild variant="default" size="sm" className="text-xs sm:text-sm">
                 <Link to={`/?sid=${studentId}&eid=${examId}`}>
-                  <Search className="mr-2 h-4 w-4" />
+                  <Search className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   View Full Result Card
                 </Link>
               </Button>
-              <Button onClick={resetVerification} variant="outline" size="sm">
-                <QrCode className="mr-2 h-4 w-4" />
+              <Button onClick={resetVerification} variant="outline" size="sm" className="text-xs sm:text-sm">
+                <QrCode className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Scan Another QR
               </Button>
             </div>
@@ -384,16 +384,16 @@ const Verify = () => {
 
   // Default: Scanner view
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4">
-      <div className="max-w-md mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-3 sm:p-4">
+      <div className="max-w-md mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <Card>
           <CardHeader className="text-center pb-2">
-            <div className="flex justify-center mb-3">
-              <img src={schoolLogo} alt="School Logo" className="h-16 w-16 object-contain" />
+            <div className="flex justify-center mb-2 sm:mb-3">
+              <img src={schoolLogo} alt="School Logo" className="h-12 w-12 sm:h-16 sm:w-16 object-contain" />
             </div>
-            <CardTitle className="text-lg">Result Verification</CardTitle>
-            <p className="text-xs text-muted-foreground">
+            <CardTitle className="text-base sm:text-lg">Result Verification</CardTitle>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Scan a result QR code to verify its authenticity
             </p>
           </CardHeader>
@@ -402,21 +402,21 @@ const Verify = () => {
         {/* Tabs for Scanner */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="scan" className="gap-2">
+            <TabsTrigger value="scan" className="gap-2 text-xs sm:text-sm">
               <QrCode className="h-4 w-4" />
               Scan QR Code
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="scan" className="mt-4">
+          <TabsContent value="scan" className="mt-3 sm:mt-4">
             <QRScanner onScanSuccess={handleQRScan} />
           </TabsContent>
         </Tabs>
 
         {/* Back to Portal */}
         <div className="text-center">
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="ghost" size="sm" className="text-xs sm:text-sm">
             <Link to="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
+              <ArrowLeft className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               Back to Result Portal
             </Link>
           </Button>
