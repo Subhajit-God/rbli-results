@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Shield, ArrowLeft, Loader2, GraduationCap } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CheckCircle2, XCircle, Shield, ArrowLeft, Loader2, GraduationCap, QrCode, Search } from "lucide-react";
 import schoolLogo from "@/assets/school-logo.png";
+import QRScanner from "@/components/QRScanner";
 
 interface VerificationData {
   student: {
@@ -34,101 +36,125 @@ interface VerificationData {
 
 const Verify = () => {
   const [searchParams] = useSearchParams();
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<VerificationData | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("scan");
 
   const studentId = searchParams.get("sid");
   const examId = searchParams.get("eid");
 
+  // Check if URL already has params
+  const hasParams = studentId && examId;
+
   useEffect(() => {
-    const verifyResult = async () => {
-      if (!studentId || !examId) {
-        setError("Invalid verification link. Missing student or exam information.");
+    if (hasParams) {
+      setActiveTab("verify");
+      verifyResult(studentId, examId);
+    }
+  }, [studentId, examId]);
+
+  const verifyResult = async (sid: string, eid: string) => {
+    setLoading(true);
+    setError(null);
+    setVerified(false);
+    setData(null);
+
+    try {
+      // Fetch student data
+      const { data: student, error: studentError } = await supabase
+        .from("students")
+        .select("*")
+        .eq("student_id", sid)
+        .maybeSingle();
+
+      if (studentError) throw studentError;
+      if (!student) {
+        setError("Student record not found. This result may not be authentic.");
         setLoading(false);
         return;
       }
 
-      try {
-        // Fetch student data
-        const { data: student, error: studentError } = await supabase
-          .from("students")
-          .select("*")
-          .eq("student_id", studentId)
-          .maybeSingle();
+      // Fetch exam data (must be deployed)
+      const { data: exam, error: examError } = await supabase
+        .from("exams")
+        .select("*")
+        .eq("id", eid)
+        .eq("is_deployed", true)
+        .maybeSingle();
 
-        if (studentError) throw studentError;
-        if (!student) {
-          setError("Student record not found. This result may not be authentic.");
-          setLoading(false);
-          return;
-        }
-
-        // Fetch exam data (must be deployed)
-        const { data: exam, error: examError } = await supabase
-          .from("exams")
-          .select("*")
-          .eq("id", examId)
-          .eq("is_deployed", true)
-          .maybeSingle();
-
-        if (examError) throw examError;
-        if (!exam) {
-          setError("Exam not found or not yet published. This result cannot be verified.");
-          setLoading(false);
-          return;
-        }
-
-        // Fetch rank data
-        const { data: rank, error: rankError } = await supabase
-          .from("ranks")
-          .select("*")
-          .eq("student_id", student.id)
-          .eq("exam_id", examId)
-          .maybeSingle();
-
-        if (rankError) throw rankError;
-        if (!rank) {
-          setError("Result data not found for this student and exam combination.");
-          setLoading(false);
-          return;
-        }
-
-        setData({
-          student: {
-            name: student.name,
-            studentId: student.student_id,
-            class: student.class_number,
-            section: student.section,
-            rollNumber: student.roll_number,
-            fatherName: student.father_name,
-            motherName: student.mother_name,
-          },
-          exam: {
-            name: exam.name,
-            academicYear: exam.academic_year,
-            deployedAt: exam.deployed_at || exam.updated_at,
-          },
-          rank: {
-            totalMarks: Number(rank.total_marks),
-            percentage: Number(rank.percentage),
-            grade: rank.grade,
-            rank: rank.rank,
-            isPassed: rank.is_passed,
-          },
-        });
-        setVerified(true);
-      } catch (err) {
-        console.error("Verification error:", err);
-        setError("An error occurred during verification. Please try again.");
-      } finally {
+      if (examError) throw examError;
+      if (!exam) {
+        setError("Exam not found or not yet published. This result cannot be verified.");
         setLoading(false);
+        return;
       }
-    };
 
-    verifyResult();
-  }, [studentId, examId]);
+      // Fetch rank data
+      const { data: rank, error: rankError } = await supabase
+        .from("ranks")
+        .select("*")
+        .eq("student_id", student.id)
+        .eq("exam_id", eid)
+        .maybeSingle();
+
+      if (rankError) throw rankError;
+      if (!rank) {
+        setError("Result data not found for this student and exam combination.");
+        setLoading(false);
+        return;
+      }
+
+      setData({
+        student: {
+          name: student.name,
+          studentId: student.student_id,
+          class: student.class_number,
+          section: student.section,
+          rollNumber: student.roll_number,
+          fatherName: student.father_name,
+          motherName: student.mother_name,
+        },
+        exam: {
+          name: exam.name,
+          academicYear: exam.academic_year,
+          deployedAt: exam.deployed_at || exam.updated_at,
+        },
+        rank: {
+          totalMarks: Number(rank.total_marks),
+          percentage: Number(rank.percentage),
+          grade: rank.grade,
+          rank: rank.rank,
+          isPassed: rank.is_passed,
+        },
+      });
+      setVerified(true);
+    } catch (err) {
+      console.error("Verification error:", err);
+      setError("An error occurred during verification. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQRScan = (decodedText: string) => {
+    try {
+      const url = new URL(decodedText);
+      const sid = url.searchParams.get("sid");
+      const eid = url.searchParams.get("eid");
+
+      if (sid && eid) {
+        // Navigate to the same page with params to trigger verification
+        navigate(`/verify?sid=${encodeURIComponent(sid)}&eid=${encodeURIComponent(eid)}`);
+      } else {
+        setError("Invalid QR code. Missing student or exam information.");
+      }
+    } catch (err) {
+      setError("Invalid QR code format.");
+    }
+  };
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
@@ -143,6 +169,15 @@ const Verify = () => {
     }
   };
 
+  const resetVerification = () => {
+    setVerified(false);
+    setError(null);
+    setData(null);
+    setActiveTab("scan");
+    navigate("/verify");
+  };
+
+  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30">
@@ -157,7 +192,8 @@ const Verify = () => {
     );
   }
 
-  if (error) {
+  // Error state
+  if (error && !verified) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-destructive/5 p-4">
         <Card className="w-full max-w-md border-destructive/50">
@@ -170,7 +206,11 @@ const Verify = () => {
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">{error}</p>
             <Separator />
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col gap-2">
+              <Button onClick={resetVerification} variant="default">
+                <QrCode className="mr-2 h-4 w-4" />
+                Scan Another QR Code
+              </Button>
               <Button asChild variant="outline">
                 <Link to="/">
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -184,6 +224,7 @@ const Verify = () => {
     );
   }
 
+  // Verified state
   if (verified && data) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4">
@@ -318,24 +359,71 @@ const Verify = () => {
             </CardContent>
           </Card>
 
-          {/* Footer */}
+          {/* Footer Actions */}
           <div className="text-center space-y-2 py-4">
             <p className="text-xs text-muted-foreground">
               For detailed marks, please use the Result Portal.
             </p>
-            <Button asChild variant="outline" size="sm">
-              <Link to={`/?sid=${studentId}&eid=${examId}`}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                View Full Result Card
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button asChild variant="default" size="sm">
+                <Link to={`/?sid=${studentId}&eid=${examId}`}>
+                  <Search className="mr-2 h-4 w-4" />
+                  View Full Result Card
+                </Link>
+              </Button>
+              <Button onClick={resetVerification} variant="outline" size="sm">
+                <QrCode className="mr-2 h-4 w-4" />
+                Scan Another QR
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  return null;
+  // Default: Scanner view
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <div className="max-w-md mx-auto space-y-6">
+        {/* Header */}
+        <Card>
+          <CardHeader className="text-center pb-2">
+            <div className="flex justify-center mb-3">
+              <img src={schoolLogo} alt="School Logo" className="h-16 w-16 object-contain" />
+            </div>
+            <CardTitle className="text-lg">Result Verification</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Scan a result QR code to verify its authenticity
+            </p>
+          </CardHeader>
+        </Card>
+
+        {/* Tabs for Scanner */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-1">
+            <TabsTrigger value="scan" className="gap-2">
+              <QrCode className="h-4 w-4" />
+              Scan QR Code
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="scan" className="mt-4">
+            <QRScanner onScanSuccess={handleQRScan} />
+          </TabsContent>
+        </Tabs>
+
+        {/* Back to Portal */}
+        <div className="text-center">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Result Portal
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Verify;

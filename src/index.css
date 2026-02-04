@@ -192,7 +192,16 @@
       color-adjust: exact !important;
     }
 
-    html, body {
+    html {
+      width: 297mm !important;
+      height: 210mm !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: white !important;
+      overflow: visible !important;
+    }
+
+    body {
       width: 297mm !important;
       height: 210mm !important;
       margin: 0 !important;
@@ -201,38 +210,60 @@
       color: black !important;
       font-size: 10pt !important;
       overflow: visible !important;
+      position: relative !important;
     }
 
-    /* Hide all screen elements */
-    body > *:not(#result-pdf-container) {
+    /* Hide everything except the PDF container */
+    .print\:hidden,
+    header,
+    footer,
+    nav,
+    aside,
+    .fixed,
+    button,
+    .floating-shapes,
+    [class*="FloatingShapes"] {
       display: none !important;
+      visibility: hidden !important;
+    }
+
+    /* Show the PDF container */
+    .print\:block {
+      display: block !important;
+      visibility: visible !important;
     }
 
     #result-pdf-container {
       display: block !important;
-      position: absolute !important;
+      visibility: visible !important;
+      position: fixed !important;
       top: 0 !important;
       left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
       width: 297mm !important;
       height: 210mm !important;
       margin: 0 !important;
       padding: 0 !important;
+      z-index: 99999 !important;
+      background: white !important;
       overflow: visible !important;
     }
 
-    .print\:hidden {
-      display: none !important;
-    }
-
-    .print\:block {
+    #result-pdf-container > * {
       display: block !important;
+      visibility: visible !important;
     }
 
     /* Result Card PDF Container */
-    .result-card-pdf-container {
+    .result-card-pdf-container,
+    #result-pdf {
+      display: block !important;
+      visibility: visible !important;
       width: 297mm !important;
       min-height: 210mm !important;
       max-height: 210mm !important;
+      height: 210mm !important;
       margin: 0 !important;
       padding: 8mm 10mm !important;
       background: white !important;
@@ -242,7 +273,13 @@
       box-sizing: border-box !important;
       page-break-after: always !important;
       page-break-inside: avoid !important;
-      overflow: hidden !important;
+      overflow: visible !important;
+      position: relative !important;
+    }
+
+    /* Ensure all children are visible */
+    .result-card-pdf-container * {
+      visibility: visible !important;
     }
 
     /* Ensure tables don't break across pages */
