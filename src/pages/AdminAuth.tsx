@@ -29,6 +29,7 @@ const registerSchema = z.object({
 });
 
 const AdminAuth = () => {
+  // Determine initial tab based on adminExists - will be updated in useEffect
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +88,8 @@ const AdminAuth = () => {
 
   // Auto-switch to login tab if admin exists
   useEffect(() => {
-    if (adminExists === true && activeTab === "register") {
+    // Force login-only mode when admin exists
+    if (adminExists === true) {
       setActiveTab("login");
     }
   }, [adminExists, activeTab]);
@@ -310,12 +312,22 @@ const AdminAuth = () => {
                 </Alert>
               )}
 
-              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")}>
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+              <Tabs 
+                value={activeTab} 
+                onValueChange={(v) => {
+                  // Prevent switching to register if admin exists
+                  if (v === "register" && adminExists) {
+                    return;
+                  }
+                  setActiveTab(v as "login" | "register");
+                }}
+              >
+                {/* Conditionally render tabs - only show Register when no admin exists */}
+                <TabsList className={`grid w-full mb-6 ${adminExists ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="register" disabled={adminExists === true}>
-                    Register
-                  </TabsTrigger>
+                  {adminExists === false && (
+                    <TabsTrigger value="register">Register</TabsTrigger>
+                  )}
                 </TabsList>
 
                 <TabsContent value="login">
@@ -378,16 +390,9 @@ const AdminAuth = () => {
                   </form>
                 </TabsContent>
 
-                <TabsContent value="register">
-                  {adminExists ? (
-                    <div className="py-8 text-center">
-                      <ShieldAlert className="h-12 w-12 mx-auto text-warning mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">Registration Disabled</h3>
-                      <p className="text-muted-foreground">
-                        An admin account already exists. Registration is not allowed.
-                      </p>
-                    </div>
-                  ) : (
+                {/* Only render Register content when no admin exists */}
+                {adminExists === false && (
+                  <TabsContent value="register">
                     <form onSubmit={handleRegister} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="register-email">Email</Label>
@@ -475,8 +480,8 @@ const AdminAuth = () => {
                         )}
                       </Button>
                     </form>
-                  )}
-                </TabsContent>
+                  </TabsContent>
+                )}
               </Tabs>
             </CardContent>
           </Card>
