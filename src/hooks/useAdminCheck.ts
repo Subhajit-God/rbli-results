@@ -11,15 +11,15 @@ export const useAdminCheck = () => {
 
   const checkAdminExists = async () => {
     try {
-      const { count, error } = await supabase
-        .from('admin_roles')
-        .select('*', { count: 'exact', head: true });
-      
+      // Use the security definer function to bypass RLS
+      const { data, error } = await supabase.rpc('admin_exists');
+
       if (error) throw error;
-      setAdminExists((count ?? 0) > 0);
+      setAdminExists(data === true);
     } catch (error) {
       console.error('Error checking admin:', error);
-      setAdminExists(false);
+      // On error, assume admin exists for security (prevents unauthorized registration)
+      setAdminExists(true);
     } finally {
       setIsLoading(false);
     }
