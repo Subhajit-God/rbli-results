@@ -41,6 +41,8 @@ interface ResultCardPDFProps {
   marks: MarksRow[];
   summary: ResultSummary;
   examId?: string;
+  headmasterSignatureUrl?: string | null;
+  schoolStampUrl?: string | null;
 }
 
 const getGradeColor = (grade: string) => {
@@ -52,99 +54,133 @@ const getGradeColor = (grade: string) => {
   }
 };
 
-// School Stamp Component
-const SchoolStamp = () => (
-  <div 
-    className="school-stamp"
-    style={{
-      position: 'absolute',
-      right: '60px',
-      bottom: '80px',
-      width: '100px',
-      height: '100px',
-      borderRadius: '50%',
-      border: '3px double #1e40af',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      opacity: 0.2,
-      transform: 'rotate(-15deg)',
-      backgroundColor: 'transparent',
-      pointerEvents: 'none',
-    }}
-  >
-    <div 
-      style={{
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        borderRadius: '50%',
-        border: '1px solid #1e40af',
-        margin: '6px',
-      }}
-    />
-    <div 
-      style={{
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        right: '0',
-        bottom: '0',
-        borderRadius: '50%',
-        border: '1px solid #1e40af',
-        margin: '10px',
-      }}
-    />
-    <span 
-      style={{
-        fontSize: '6px',
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: '#1e40af',
-        lineHeight: '1.1',
-        maxWidth: '70px',
-        textTransform: 'uppercase',
-      }}
-    >
-      RAMJIBANPUR BABULAL INSTITUTION
-    </span>
-    <span 
-      style={{
-        fontSize: '8px',
-        fontWeight: 'bold',
-        color: '#1e40af',
-        marginTop: '2px',
-      }}
-    >
-      ★ ★ ★
-    </span>
-    <span 
-      style={{
-        fontSize: '5px',
-        color: '#1e40af',
-        textAlign: 'center',
-      }}
-    >
-      Ramjibanpur, W.B.
-    </span>
-    <span 
-      style={{
-        fontSize: '6px',
-        fontWeight: 'bold',
-        color: '#1e40af',
-        marginTop: '2px',
-        letterSpacing: '1px',
-      }}
-    >
-      OFFICIAL SEAL
-    </span>
-  </div>
-);
+// School Stamp Component - now supports custom uploaded stamp
+const SchoolStamp = ({ stampUrl }: { stampUrl?: string | null }) => {
+  if (stampUrl) {
+    return (
+      <div 
+        className="school-stamp"
+        style={{
+          position: 'absolute',
+          right: '60px',
+          bottom: '80px',
+          width: '100px',
+          height: '100px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          opacity: 0.25,
+          transform: 'rotate(-15deg)',
+          pointerEvents: 'none',
+        }}
+      >
+        <img 
+          src={stampUrl} 
+          alt="School Stamp"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+          }}
+        />
+      </div>
+    );
+  }
 
-const ResultCardPDF = ({ examName, student, marks, summary, examId }: ResultCardPDFProps) => {
+  // Default stamp design
+  return (
+    <div 
+      className="school-stamp"
+      style={{
+        position: 'absolute',
+        right: '60px',
+        bottom: '80px',
+        width: '100px',
+        height: '100px',
+        borderRadius: '50%',
+        border: '3px double #1e40af',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        opacity: 0.2,
+        transform: 'rotate(-15deg)',
+        backgroundColor: 'transparent',
+        pointerEvents: 'none',
+      }}
+    >
+      <div 
+        style={{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          borderRadius: '50%',
+          border: '1px solid #1e40af',
+          margin: '6px',
+        }}
+      />
+      <div 
+        style={{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          borderRadius: '50%',
+          border: '1px solid #1e40af',
+          margin: '10px',
+        }}
+      />
+      <span 
+        style={{
+          fontSize: '6px',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          color: '#1e40af',
+          lineHeight: '1.1',
+          maxWidth: '70px',
+          textTransform: 'uppercase',
+        }}
+      >
+        RAMJIBANPUR BABULAL INSTITUTION
+      </span>
+      <span 
+        style={{
+          fontSize: '8px',
+          fontWeight: 'bold',
+          color: '#1e40af',
+          marginTop: '2px',
+        }}
+      >
+        ★ ★ ★
+      </span>
+      <span 
+        style={{
+          fontSize: '5px',
+          color: '#1e40af',
+          textAlign: 'center',
+        }}
+      >
+        Ramjibanpur, W.B.
+      </span>
+      <span 
+        style={{
+          fontSize: '6px',
+          fontWeight: 'bold',
+          color: '#1e40af',
+          marginTop: '2px',
+          letterSpacing: '1px',
+        }}
+      >
+        OFFICIAL SEAL
+      </span>
+    </div>
+  );
+};
+
+const ResultCardPDF = ({ examName, student, marks, summary, examId, headmasterSignatureUrl, schoolStampUrl }: ResultCardPDFProps) => {
   // Generate verification URL - points to /verify page
   const baseUrl = "https://rbli-results.lovable.app";
   const verificationUrl = `${baseUrl}/verify?sid=${encodeURIComponent(student.studentId)}${examId ? `&eid=${encodeURIComponent(examId)}` : ''}`;
@@ -514,6 +550,26 @@ const ResultCardPDF = ({ examName, student, marks, summary, examId }: ResultCard
           </div>
         </div>
         <div style={{ textAlign: 'center', width: '140px', position: 'relative' }}>
+          {headmasterSignatureUrl && (
+            <div style={{
+              position: 'absolute',
+              bottom: '30px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '100px',
+              height: '40px',
+            }}>
+              <img 
+                src={headmasterSignatureUrl} 
+                alt="Principal Signature"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </div>
+          )}
           <div style={{ 
             borderTop: '1px solid #1e293b', 
             paddingTop: '6px',
@@ -528,7 +584,7 @@ const ResultCardPDF = ({ examName, student, marks, summary, examId }: ResultCard
       </div>
 
       {/* Official School Stamp */}
-      <SchoolStamp />
+      <SchoolStamp stampUrl={schoolStampUrl} />
 
       {/* Footer with QR Code */}
       <div 

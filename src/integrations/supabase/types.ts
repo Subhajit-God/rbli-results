@@ -194,6 +194,33 @@ export type Database = {
           },
         ]
       }
+      pdf_assets: {
+        Row: {
+          asset_type: string
+          file_name: string
+          file_url: string
+          id: string
+          updated_at: string
+          uploaded_at: string
+        }
+        Insert: {
+          asset_type: string
+          file_name: string
+          file_url: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Update: {
+          asset_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          updated_at?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
       ranks: {
         Row: {
           created_at: string

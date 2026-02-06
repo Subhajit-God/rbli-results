@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import PdfAssetsSection from "./PdfAssetsSection";
 
 const SettingsSection = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -398,6 +399,9 @@ const SettingsSection = () => {
         <h2 className="text-2xl font-bold">Settings</h2>
         <p className="text-muted-foreground">System configuration and maintenance</p>
       </div>
+
+      {/* PDF Signature & Stamp */}
+      <PdfAssetsSection />
 
       {/* Backup & Export */}
       <Card>
