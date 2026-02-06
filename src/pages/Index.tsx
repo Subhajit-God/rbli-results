@@ -14,6 +14,11 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 
+interface PdfAsset {
+  asset_type: string;
+  file_url: string;
+}
+
 interface ResultData {
   student: {
     name: string;
@@ -55,6 +60,10 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [autoLookupAttempted, setAutoLookupAttempted] = useState(false);
+  const [pdfAssets, setPdfAssets] = useState<{ signature: string | null; stamp: string | null }>({
+    signature: null,
+    stamp: null,
+  });
   const { toast } = useToast();
 
   // Get URL params for auto-lookup
@@ -65,6 +74,33 @@ const Index = () => {
   useEffect(() => {
     const timer = setTimeout(() => setIsInitialLoading(false), 800);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Fetch PDF assets (signature and stamp)
+  useEffect(() => {
+    const fetchPdfAssets = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("pdf_assets")
+          .select("asset_type, file_url");
+
+        if (error) throw error;
+
+        const assets = { signature: null as string | null, stamp: null as string | null };
+        data?.forEach((asset: PdfAsset) => {
+          if (asset.asset_type === "headmaster_signature") {
+            assets.signature = asset.file_url;
+          } else if (asset.asset_type === "school_stamp") {
+            assets.stamp = asset.file_url;
+          }
+        });
+        setPdfAssets(assets);
+      } catch (error) {
+        console.error("Error fetching PDF assets:", error);
+      }
+    };
+
+    fetchPdfAssets();
   }, []);
 
   // Fetch result by student ID and exam ID (for URL params / QR code)
@@ -327,6 +363,8 @@ const Index = () => {
             student={resultData.student}
             marks={resultData.marks}
             summary={resultData.summary}
+            headmasterSignatureUrl={pdfAssets.signature}
+            schoolStampUrl={pdfAssets.stamp}
           />
         </div>
       )}
