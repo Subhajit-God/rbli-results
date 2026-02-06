@@ -104,8 +104,10 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
             setStudentId(e.target.value);
             if (errors.studentId) setErrors(prev => ({ ...prev, studentId: "" }));
           }}
+          aria-describedby={errors.studentId ? "studentId-error" : undefined}
+          aria-invalid={!!errors.studentId}
           className={cn(
-            "h-12 text-base transition-all duration-200 focus:shadow-md",
+            "h-12 min-h-[44px] text-base transition-all duration-200 focus:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             errors.studentId 
               ? "border-destructive focus-visible:ring-destructive" 
               : "focus:border-primary"
@@ -113,7 +115,7 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
           disabled={isLoading}
         />
         {errors.studentId && (
-          <p className="text-sm text-destructive flex items-center gap-1 animate-fade-in">
+          <p id="studentId-error" role="alert" className="text-sm text-destructive flex items-center gap-1 animate-fade-in">
             {errors.studentId}
           </p>
         )}
@@ -133,8 +135,10 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
           disabled={isLoading}
         >
           <SelectTrigger 
+            aria-describedby={errors.classNumber ? "classNumber-error" : undefined}
+            aria-invalid={!!errors.classNumber}
             className={cn(
-              "h-12 text-base transition-all duration-200",
+              "h-12 min-h-[44px] text-base transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               errors.classNumber 
                 ? "border-destructive focus-visible:ring-destructive"
                 : "focus:border-primary"
@@ -155,7 +159,7 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
           </SelectContent>
         </Select>
         {errors.classNumber && (
-          <p className="text-sm text-destructive animate-fade-in">{errors.classNumber}</p>
+          <p id="classNumber-error" role="alert" className="text-sm text-destructive animate-fade-in">{errors.classNumber}</p>
         )}
       </div>
 
@@ -177,8 +181,10 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
             <Button
               variant="outline"
               disabled={isLoading}
+              aria-describedby={errors.dob ? "dob-error" : undefined}
+              aria-invalid={!!errors.dob}
               className={cn(
-                "w-full h-12 justify-start text-left font-normal text-base transition-all duration-200",
+                "w-full h-12 min-h-[44px] justify-start text-left font-normal text-base transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 !dob && "text-muted-foreground",
                 errors.dob 
                   ? "border-destructive focus-visible:ring-destructive"
@@ -209,7 +215,7 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
           </PopoverContent>
         </Popover>
         {errors.dob && (
-          <p className="text-sm text-destructive animate-fade-in">{errors.dob}</p>
+          <p id="dob-error" role="alert" className="text-sm text-destructive animate-fade-in">{errors.dob}</p>
         )}
       </div>
 
@@ -225,7 +231,7 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
 
       <Button
         type="submit"
-        className="w-full h-12 text-base font-semibold mt-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:hover:scale-100"
+        className="w-full h-12 min-h-[44px] text-base font-semibold mt-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         disabled={isLoading}
       >
         {isLoading ? (

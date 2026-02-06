@@ -351,6 +351,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors duration-300 relative overflow-hidden">
+      {/* Skip to main content link for accessibility */}
+      <a 
+        href="#main-content" 
+        className="skip-link"
+      >
+        Skip to main content
+      </a>
+
       {/* Futuristic Background */}
       <FloatingShapes />
       
@@ -370,16 +378,16 @@ const Index = () => {
       )}
 
 
-      <div className="print:hidden relative z-10">
+      <header className="print:hidden relative z-10">
         <ResultHeader />
-      </div>
+      </header>
       
       {/* Theme Toggle - Top Right */}
       <div className="fixed top-4 right-4 z-50 print:hidden">
         <ThemeToggle />
       </div>
       
-      <main className="flex-1 container mx-auto px-4 py-10 md:py-16 print:hidden relative z-10">
+      <main id="main-content" className="flex-1 container mx-auto px-4 py-10 md:py-16 print:hidden relative z-10" role="main">
         {isInitialLoading ? (
           <div className="max-w-md mx-auto animate-fade-in">
             <ResultFormSkeleton />

@@ -25,7 +25,7 @@
     --secondary-foreground: 0 0% 100%;
 
     --muted: 220 20% 18%;
-    --muted-foreground: 200 20% 60%;
+    --muted-foreground: 200 20% 70%;
 
     /* Electric Yellow - Accent */
     --accent: 45 100% 55%;
@@ -85,7 +85,7 @@
     --secondary-foreground: 0 0% 100%;
 
     --muted: 220 20% 15%;
-    --muted-foreground: 200 20% 55%;
+    --muted-foreground: 200 20% 70%;
 
     --accent: 45 100% 60%;
     --accent-foreground: 220 25% 4%;
@@ -140,7 +140,7 @@
     --secondary-foreground: 0 0% 100%;
 
     --muted: 210 25% 92%;
-    --muted-foreground: 220 20% 45%;
+    --muted-foreground: 220 25% 40%;
 
     --accent: 45 95% 50%;
     --accent-foreground: 220 40% 15%;
@@ -569,6 +569,65 @@
   .text-glow-orange {
     text-shadow: 0 0 10px hsl(var(--warning) / 0.5), 0 0 20px hsl(var(--warning) / 0.3);
   }
+
+  /* Touch-friendly sizing */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Standardized border radius */
+  .radius-sm {
+    @apply rounded-md;
+  }
+
+  .radius-md {
+    @apply rounded-lg;
+  }
+
+  .radius-lg {
+    @apply rounded-xl;
+  }
+
+  .radius-full {
+    @apply rounded-full;
+  }
+
+  /* Focus visible improvements */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Skip link styles */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:shadow-lg;
+  }
+
+  /* Skeleton shimmer effect */
+  .skeleton-shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .skeleton-shimmer::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.1) 50%,
+      transparent 100%
+    );
+    animation: shimmer 2s infinite;
+  }
+
+  /* Card standard styling */
+  .card-standard {
+    @apply rounded-xl border border-border bg-card shadow-card;
+  }
+
+  /* Active press feedback */
+  .press-effect {
+    @apply active:scale-[0.98] transition-transform duration-100;
+  }
 }
 
 @keyframes scan {
@@ -606,5 +665,14 @@
   }
   100% {
     transform: rotate(360deg) translateX(100px) rotate(-360deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }

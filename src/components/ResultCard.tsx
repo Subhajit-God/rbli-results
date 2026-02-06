@@ -8,6 +8,7 @@ import schoolLogo from "@/assets/school-logo.png";
 import { PerformanceIndicator } from "@/components/PerformanceIndicator";
 import { AchievementsList } from "@/components/AchievementBadge";
 import { MarksDisplay, isAbsent, isExempt } from "@/components/AbsentBadge";
+import MarksTableMobile from "@/components/MarksTableMobile";
 interface StudentDetails {
   name: string;
   classNumber: number;
@@ -100,7 +101,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
   const performanceMessage = getPerformanceMessage(summary.percentage);
 
   return (
-    <Card className="glass-effect neon-border overflow-hidden print:shadow-none print:border transition-all duration-300 result-card-print">
+    <Card className="glass-effect neon-border overflow-hidden print:shadow-none print:border transition-all duration-300 result-card-print rounded-xl">
       {/* Header */}
       <CardHeader className="header-gradient text-primary-foreground p-6 md:p-8 print:p-3 relative overflow-hidden card-header-print">
         {/* Decorative background - hidden in print */}
@@ -191,8 +192,11 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
           ))}
         </div>
 
-        {/* Marks Table */}
-        <div className="overflow-x-auto rounded-xl border border-border print:rounded-none print:overflow-visible">
+        {/* Mobile Marks Cards */}
+        <MarksTableMobile marks={marks} />
+
+        {/* Desktop Marks Table */}
+        <div className="hidden md:block overflow-x-auto rounded-xl border border-border print:rounded-none print:overflow-visible">
           <table className="w-full border-collapse text-sm print:text-[10px] marks-table-print">
             <thead>
               <tr className="header-gradient text-primary-foreground">
@@ -343,7 +347,7 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
             <Button 
               onClick={onDownloadPDF}
               size="lg"
-              className="gold-gradient text-accent-foreground hover:opacity-90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              className="gold-gradient text-accent-foreground hover:opacity-90 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-[0.98] min-h-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <Download className="mr-2 h-5 w-5" />
               Download PDF Result

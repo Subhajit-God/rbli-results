@@ -30,10 +30,10 @@ const ResultHeader = ({ examName }: ResultHeaderProps) => {
               <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-accent animate-bounce-subtle" />
               <span className="text-xs md:text-sm font-medium text-accent tracking-wider uppercase">Est. 1925</span>
             </div>
-            <h1 className="text-2xl md:text-4xl font-bold tracking-wide drop-shadow-md">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-wide drop-shadow-md leading-tight">
               Ramjibanpur Babulal Institution
             </h1>
-            <p className="text-sm md:text-base text-primary-foreground/70 mt-1 font-light tracking-wide">
+            <p className="text-xs sm:text-sm md:text-base text-primary-foreground/70 mt-1 font-light tracking-wide">
               Excellence in Education
             </p>
           </div>
