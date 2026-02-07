@@ -47,7 +47,7 @@ const navItems = [
   { id: "overview" as Section, label: "Overview", icon: GraduationCap },
   { id: "students" as Section, label: "Students", icon: Users },
   { id: "subjects" as Section, label: "Subjects", icon: BookOpen },
-  { id: "exams" as Section, label: "Exams", icon: FileText },
+  { id: "exams" as Section, label: "Academic Year", icon: FileText },
   { id: "marks" as Section, label: "Marks Entry", icon: ClipboardList },
   { id: "ranks" as Section, label: "Ranks", icon: Award },
   { id: "deploy" as Section, label: "Deploy", icon: Rocket },

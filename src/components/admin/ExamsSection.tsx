@@ -175,11 +175,11 @@ const ExamsSection = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Summative Evaluation</h2>
+          <h2 className="text-2xl font-bold">Academic Year</h2>
           <p className="text-muted-foreground">Create and manage academic year evaluations</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
-          <Plus className="mr-2 h-4 w-4" /> Create Exam
+          <Plus className="mr-2 h-4 w-4" /> Create Academic Year
         </Button>
       </div>
 
