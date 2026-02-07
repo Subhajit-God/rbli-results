@@ -30,6 +30,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { DashboardStatsSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
+import DeploymentOverlay from "@/components/admin/DeploymentOverlay";
+import { useDeploymentStatus } from "@/hooks/useDeploymentStatus";
 
 // Import dashboard sections
 import StudentsSection from "@/components/admin/StudentsSection";
@@ -42,6 +44,9 @@ import SettingsSection from "@/components/admin/SettingsSection";
 import VerifySection from "@/components/admin/VerifySection";
 
 type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings";
+
+// Sections that should be blocked when results are deployed
+const blockedSections: Section[] = ["overview", "students", "subjects", "marks", "ranks", "verify", "settings"];
 
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: GraduationCap },
@@ -69,6 +74,11 @@ const AdminDashboard = () => {
     totalExams: 0,
     deployedExams: 0,
   });
+
+  const { hasDeployedExam, deployedExam, refetch: refetchDeploymentStatus } = useDeploymentStatus();
+  
+  // Check if current section should show the deployment overlay
+  const showDeploymentOverlay = hasDeployedExam && blockedSections.includes(activeSection);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -179,7 +189,7 @@ const AdminDashboard = () => {
       case "subjects":
         return <SubjectsSection />;
       case "exams":
-        return <ExamsSection />;
+        return <ExamsSection onDeploymentChange={refetchDeploymentStatus} />;
       case "marks":
         return <MarksSection />;
       case "ranks":
@@ -500,7 +510,13 @@ const AdminDashboard = () => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 md:p-6 overflow-auto">
+        <div className="flex-1 p-4 md:p-6 overflow-auto relative">
+          {showDeploymentOverlay && (
+            <DeploymentOverlay 
+              onNavigateToAcademicYear={() => setActiveSection("exams")}
+              deployedYear={deployedExam?.academic_year}
+            />
+          )}
           {renderSection()}
         </div>
       </main>
