@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, Edit, Trash2, Calendar, Info, ArrowUpCircle, Download, Users } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Info, ArrowUpCircle, Download, Users, CheckCircle2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +34,7 @@ interface Exam {
   name: string;
   academic_year: string;
   is_deployed: boolean;
+  is_current: boolean;
   deployed_at: string | null;
   created_at: string;
 }
@@ -388,6 +389,32 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
 
   // Check if there's a deployed exam
   const hasDeployedExam = exams.some(e => e.is_deployed);
+  
+  // Get the current academic year
+  const currentAcademicYear = exams.find(e => e.is_current);
+
+  const handleSetCurrent = async (exam: Exam) => {
+    try {
+      const { error } = await supabase
+        .from('exams')
+        .update({ is_current: true })
+        .eq('id', exam.id);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Current Year Set",
+        description: `${exam.academic_year} is now the current academic year`,
+      });
+      fetchExams();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to set current academic year",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -431,23 +458,48 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {exams.map((exam) => (
-            <Card key={exam.id} className={exam.is_deployed ? "border-success/50" : ""}>
+            <Card 
+              key={exam.id} 
+              className={`${exam.is_current ? "border-primary border-2 ring-2 ring-primary/20" : ""} ${exam.is_deployed ? "border-success/50" : ""}`}
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{exam.name}</CardTitle>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {exam.name}
+                      {exam.is_current && (
+                        <Star className="h-4 w-4 text-primary fill-primary" />
+                      )}
+                    </CardTitle>
                     <CardDescription className="flex items-center gap-1 mt-1">
                       <Calendar className="h-3 w-3" />
                       Academic Year: {exam.academic_year}
                     </CardDescription>
                   </div>
-                  <Badge variant={exam.is_deployed ? "default" : "secondary"}>
-                    {exam.is_deployed ? "Published" : "Draft"}
-                  </Badge>
+                  <div className="flex flex-col gap-1 items-end">
+                    {exam.is_current && (
+                      <Badge variant="default" className="bg-primary">
+                        Current
+                      </Badge>
+                    )}
+                    <Badge variant={exam.is_deployed ? "default" : "secondary"}>
+                      {exam.is_deployed ? "Published" : "Draft"}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {!exam.is_current && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSetCurrent(exam)}
+                      className="border-primary/50 text-primary hover:bg-primary/10"
+                    >
+                      <CheckCircle2 className="mr-1 h-3 w-3" /> Set Current
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"

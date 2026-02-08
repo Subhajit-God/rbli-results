@@ -109,6 +109,7 @@ export type Database = {
           created_at: string
           deployed_at: string | null
           id: string
+          is_current: boolean
           is_deployed: boolean
           name: string
           updated_at: string
@@ -118,6 +119,7 @@ export type Database = {
           created_at?: string
           deployed_at?: string | null
           id?: string
+          is_current?: boolean
           is_deployed?: boolean
           name: string
           updated_at?: string
@@ -127,6 +129,7 @@ export type Database = {
           created_at?: string
           deployed_at?: string | null
           id?: string
+          is_current?: boolean
           is_deployed?: boolean
           name?: string
           updated_at?: string
