@@ -31,7 +31,9 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { DashboardStatsSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 import DeploymentOverlay from "@/components/admin/DeploymentOverlay";
+import CurrentYearBanner from "@/components/admin/CurrentYearBanner";
 import { useDeploymentStatus } from "@/hooks/useDeploymentStatus";
+import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
 
 // Import dashboard sections
 import StudentsSection from "@/components/admin/StudentsSection";
@@ -76,6 +78,7 @@ const AdminDashboard = () => {
   });
 
   const { hasDeployedExam, deployedExam, refetch: refetchDeploymentStatus } = useDeploymentStatus();
+  const { currentYear, refetch: refetchCurrentYear } = useCurrentAcademicYear();
   
   // Check if current section should show the deployment overlay
   const showDeploymentOverlay = hasDeployedExam && blockedSections.includes(activeSection);
@@ -189,7 +192,7 @@ const AdminDashboard = () => {
       case "subjects":
         return <SubjectsSection />;
       case "exams":
-        return <ExamsSection onDeploymentChange={refetchDeploymentStatus} />;
+        return <ExamsSection onDeploymentChange={() => { refetchDeploymentStatus(); refetchCurrentYear(); }} />;
       case "marks":
         return <MarksSection />;
       case "ranks":
@@ -511,6 +514,16 @@ const AdminDashboard = () => {
 
         {/* Content Area */}
         <div className="flex-1 p-4 md:p-6 overflow-auto relative">
+          {/* Current Academic Year Banner - shown on all sections except exams */}
+          {activeSection !== "exams" && (
+            <div className="mb-4">
+              <CurrentYearBanner 
+                academicYear={currentYear?.academic_year || null}
+                examName={currentYear?.name}
+              />
+            </div>
+          )}
+          
           {showDeploymentOverlay && (
             <DeploymentOverlay 
               onNavigateToAcademicYear={() => setActiveSection("exams")}

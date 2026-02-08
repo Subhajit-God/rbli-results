@@ -314,6 +314,40 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
     }
   };
 
+  // Check if this is the first academic year (no existing exams)
+  const isFirstAcademicYear = exams.length === 0;
+
+  const handleCreateFirstAcademicYear = async () => {
+    try {
+      const { data: newExam, error } = await supabase
+        .from('exams')
+        .insert({
+          name: EXAM_NAME,
+          academic_year: formData.academic_year,
+          is_current: true, // Set as current since it's the first one
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Academic Year Created",
+        description: `Academic year ${formData.academic_year} created successfully. You can now add students.`,
+      });
+
+      setIsDialogOpen(false);
+      fetchExams();
+      onDeploymentChange?.();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to create academic year",
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     const newErrors: Record<string, string> = {};
     
@@ -345,7 +379,13 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
         if (error) throw error;
         toast({ title: "Success", description: "Academic year updated successfully" });
       } else {
-        // For new academic year, show promotion dialog
+        // Check if this is the first academic year
+        if (isFirstAcademicYear) {
+          // First time - just create without promotion
+          await handleCreateFirstAcademicYear();
+          return;
+        }
+        // For subsequent academic years, show promotion dialog
         await handleOpenPromotionDialog();
         return; // Don't close dialog yet
       }
@@ -571,16 +611,28 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
             </div>
 
             {!selectedExam && (
-              <Alert className="border-muted">
+              <Alert className={isFirstAcademicYear ? "border-primary/30 bg-primary/5" : "border-muted"}>
                 <Users className="h-4 w-4" />
                 <AlertDescription className="text-sm">
-                  Creating a new academic year will:
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Promote Class 5-8 students to Classes 6-9</li>
-                    <li>Assign new roll numbers (alphabetically)</li>
-                    <li>Set sections: Odd rolls → A, Even rolls → B</li>
-                    <li>Export Class 9 students as Class 10 Excel file</li>
-                  </ul>
+                  {isFirstAcademicYear ? (
+                    <>
+                      <strong>First Academic Year Setup</strong>
+                      <p className="mt-1">
+                        This is your first academic year. No student promotion will occur. 
+                        After creating this, you can add students manually or import them via Excel.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      Creating a new academic year will:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Promote Class 5-8 students to Classes 6-9</li>
+                        <li>Assign new roll numbers (alphabetically)</li>
+                        <li>Set sections: Odd rolls → A, Even rolls → B</li>
+                        <li>Export Class 9 students as Class 10 Excel file</li>
+                      </ul>
+                    </>
+                  )}
                 </AlertDescription>
               </Alert>
             )}
@@ -591,7 +643,7 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
               Cancel
             </Button>
             <Button onClick={handleSubmit}>
-              {selectedExam ? "Update" : "Continue to Promotion"}
+              {selectedExam ? "Update" : (isFirstAcademicYear ? "Create Academic Year" : "Continue to Promotion")}
             </Button>
           </DialogFooter>
         </DialogContent>
