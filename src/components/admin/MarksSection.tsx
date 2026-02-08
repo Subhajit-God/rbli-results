@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Lock, Unlock, AlertTriangle, AlertCircle, FileSpreadsheet } from "lucide-react";
+import { Save, Lock, Unlock, AlertTriangle, AlertCircle, FileSpreadsheet, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MarksExcelImport from "./MarksExcelImport";
+import BulkMarksExcelImport from "./BulkMarksExcelImport";
 import { isAbsent, isExempt } from "@/components/AbsentBadge";
 
 interface Exam {
@@ -41,6 +42,7 @@ interface Subject {
   full_marks_1: number;
   full_marks_2: number;
   full_marks_3: number;
+  display_order: number | null;
 }
 
 interface Student {
@@ -80,6 +82,7 @@ const MarksSection = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [isDeploymentActive, setIsDeploymentActive] = useState(false);
   const [showExcelImport, setShowExcelImport] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [focusedCell, setFocusedCell] = useState<{ studentId: string; field: MarkField } | null>(null);
   
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
@@ -552,6 +555,17 @@ const MarksSection = () => {
                   Excel
                 </Button>
               )}
+              {selectedExam && filteredSubjects.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowBulkImport(true)}
+                  disabled={isDeploymentActive}
+                  className="border-primary/50 text-primary hover:bg-primary/10"
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Bulk Import (All Subjects)
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -690,7 +704,7 @@ const MarksSection = () => {
         </Card>
       )}
 
-      {/* Excel Import Dialog */}
+      {/* Excel Import Dialog (Single Subject) */}
       {selectedExam && selectedSubject && currentSubject && currentExam && (
         <MarksExcelImport
           open={showExcelImport}
@@ -705,6 +719,23 @@ const MarksSection = () => {
           fullMarks2={currentSubject.full_marks_2}
           fullMarks3={currentSubject.full_marks_3}
           initialMarkField={activeMarkField}
+          isDeploymentActive={isDeploymentActive}
+        />
+      )}
+
+      {/* Bulk Marks Import Dialog (All Subjects) */}
+      {selectedExam && currentExam && filteredSubjects.length > 0 && (
+        <BulkMarksExcelImport
+          open={showBulkImport}
+          onOpenChange={setShowBulkImport}
+          onImportSuccess={() => {
+            fetchMarks();
+            fetchSubjects();
+          }}
+          examId={selectedExam}
+          exam={currentExam}
+          classNumber={parseInt(selectedClass)}
+          subjects={filteredSubjects}
           isDeploymentActive={isDeploymentActive}
         />
       )}
