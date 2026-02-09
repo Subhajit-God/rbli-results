@@ -122,6 +122,12 @@ const BulkMarksExcelImport = ({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [importSummary, setImportSummary] = useState<{
+    studentsCount: number;
+    subjectBreakdown: { name: string; count: number; marks_1: number; marks_2: number; marks_3: number }[];
+    totalMarks: number;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { toast } = useToast();
@@ -482,6 +488,20 @@ const BulkMarksExcelImport = ({
         if (error) throw error;
       }
 
+      // Calculate subject-wise breakdown for summary
+      const subjectBreakdown = sortedSubjects.map(subject => {
+        const marksForSubject = validRows.flatMap(row => 
+          row.subjects.filter(s => s.subject_id === subject.id)
+        );
+        return {
+          name: subject.name,
+          count: marksForSubject.filter(s => s.marks_1 || s.marks_2 || s.marks_3).length,
+          marks_1: marksForSubject.filter(s => s.marks_1 && s.marks_1 !== "").length,
+          marks_2: marksForSubject.filter(s => s.marks_2 && s.marks_2 !== "").length,
+          marks_3: marksForSubject.filter(s => s.marks_3 && s.marks_3 !== "").length,
+        };
+      });
+
       // Log activity
       await supabase.from("activity_logs").insert({
         action: "BULK_MARKS_IMPORTED",
@@ -495,10 +515,13 @@ const BulkMarksExcelImport = ({
         },
       });
 
-      toast({
-        title: "Import Successful",
-        description: `Imported marks for ${validRows.length} students across ${subjects.length} subjects`,
+      // Set summary and show dialog
+      setImportSummary({
+        studentsCount: validRows.length,
+        subjectBreakdown,
+        totalMarks: marksToUpsert.length,
       });
+      setShowSummaryDialog(true);
 
       onImportSuccess();
       handleClose();
@@ -519,7 +542,14 @@ const BulkMarksExcelImport = ({
     setParsedData([]);
     setFileError(null);
     setSelectedMarkField('all');
+    setImportSummary(null);
     onOpenChange(false);
+  };
+
+  const handleSummaryClose = () => {
+    setShowSummaryDialog(false);
+    setImportSummary(null);
+    handleClose();
   };
 
   const totalMarksToImport = validRows.reduce((acc, row) => {
@@ -756,6 +786,92 @@ const BulkMarksExcelImport = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Summary Dialog */}
+      <Dialog open={showSummaryDialog} onOpenChange={handleSummaryClose}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-success">
+              <CheckCircle className="h-5 w-5" />
+              Import Successful
+            </DialogTitle>
+            <DialogDescription>
+              Marks have been imported for Class {classNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {importSummary && (
+            <div className="space-y-4">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">{importSummary.studentsCount}</p>
+                  <p className="text-xs text-muted-foreground">Students</p>
+                </Card>
+                <Card className="p-3 text-center">
+                  <p className="text-2xl font-bold text-secondary">{sortedSubjects.length}</p>
+                  <p className="text-xs text-muted-foreground">Subjects</p>
+                </Card>
+                <Card className="p-3 text-center">
+                  <p className="text-2xl font-bold text-accent">{importSummary.totalMarks}</p>
+                  <p className="text-xs text-muted-foreground">Total Marks</p>
+                </Card>
+              </div>
+
+              {/* Subject-wise Breakdown */}
+              <div>
+                <h4 className="font-medium mb-2 text-sm">Subject-wise Breakdown</h4>
+                <ScrollArea className="h-[200px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Subject</TableHead>
+                        <TableHead className="text-center w-16">I</TableHead>
+                        <TableHead className="text-center w-16">II</TableHead>
+                        <TableHead className="text-center w-16">III</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {importSummary.subjectBreakdown.map((subject) => (
+                        <TableRow key={subject.name}>
+                          <TableCell className="font-medium">{subject.name}</TableCell>
+                          <TableCell className="text-center">
+                            {subject.marks_1 > 0 ? (
+                              <Badge variant="outline" className="text-xs">{subject.marks_1}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {subject.marks_2 > 0 ? (
+                              <Badge variant="outline" className="text-xs">{subject.marks_2}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {subject.marks_3 > 0 ? (
+                              <Badge variant="outline" className="text-xs">{subject.marks_3}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={handleSummaryClose}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
