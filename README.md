@@ -1,73 +1,170 @@
-# Welcome to your Lovable project
+# RBLI School Results Portal
 
-## Project info
+A modern **school result management system** built for **RBLI School** using **React, TypeScript, Vite, Tailwind CSS, shadcn/ui**, and **Supabase**.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+This project allows students to **view results online** and administrators to **manage students, subjects, exams, and marks** using a secure admin panel.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+### 👨‍🎓 Student Side
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+* Search results using roll number / details
+* View marks, grades, rank, and performance
+* Mobile-friendly result view
+* QR code result access
+* Result verification page
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🧑‍💼 Admin Side
 
-**Use your preferred IDE**
+* Secure admin login
+* Manage students, subjects, and exams
+* Upload marks using Excel files (bulk upload supported)
+* Auto rank calculation
+* Academic year management
+* PDF assets and deployment tools
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### ⚙️ System
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+* AI chatbot support
+* Supabase authentication & database
+* Responsive UI with Tailwind & shadcn/ui
+* Fast build using Vite
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🧱 Tech Stack
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+* **Frontend**: React + TypeScript
+* **Styling**: Tailwind CSS, shadcn/ui
+* **Backend**: Supabase (Database, Auth, Functions)
+* **Build Tool**: Vite
+* **Package Manager**: npm / bun
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## 📁 Project Structure (Simple)
+
+```
+rbli-results/
+├── public/            # Static files
+├── src/               # Main source code
+│   ├── components/    # Reusable UI components
+│   ├── pages/         # App pages (Home, Admin, Verify)
+│   ├── hooks/         # Custom React hooks
+│   ├── lib/           # Helper utilities
+│   ├── assets/        # Images and logos
+│   └── integrations/  # Supabase connection
+├── supabase/          # Backend functions & migrations
+├── index.html         # Main HTML file
+├── package.json       # Dependencies and scripts
+└── README.md          # Project documentation
+```
+
+---
+
+## 🚀 Getting Started
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone <repository-url>
+cd rbli-results
+```
+
+### 2️⃣ Install Dependencies
+
+```bash
+npm install
+# or
+bun install
+```
+
+### 3️⃣ Setup Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+⚠️ **Do not share this file publicly**
+
+### 4️⃣ Run the Project
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will run on:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+http://localhost:5173
+```
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🗄️ Supabase Setup
 
-## What technologies are used for this project?
+* Create a Supabase project
+* Run SQL files from `supabase/migrations/`
+* Enable authentication (email/password)
+* Deploy Supabase edge functions if required
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📊 Admin Excel Upload Rules
 
-## How can I deploy this project?
+* Excel file must follow correct column format
+* Bulk upload supported for marks
+* Rank calculation happens automatically
+* Class 9 promotion data is downloadable
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 🔐 Security Notes
 
-Yes, you can!
+* Admin routes are protected
+* Environment variables are hidden
+* Supabase Row Level Security (RLS) is used
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🛠️ Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run preview  # Preview production build
+```
+
+---
+
+## 📌 Future Improvements
+
+* Student login system
+* SMS / Email result notification
+* More analytics & charts
+* Multi-school support
+
+---
+
+## 📄 License
+
+This project is for **educational and school use**.
+
+---
+
+## 🏫 School
+
+**RBLI School**
+
+---
+
+## 🙌 Creator
+
+**Subhajit Das**
+
+Developed for school result management with a focus on **simplicity, speed, and usability**.
