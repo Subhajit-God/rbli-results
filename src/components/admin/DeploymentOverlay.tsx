@@ -1,6 +1,7 @@
-import { AlertTriangle, Calendar } from "lucide-react";
+import { AlertTriangle, Calendar, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useState } from "react";
 
 interface DeploymentOverlayProps {
   onNavigateToAcademicYear: () => void;
@@ -8,43 +9,39 @@ interface DeploymentOverlayProps {
 }
 
 const DeploymentOverlay = ({ onNavigateToAcademicYear, deployedYear }: DeploymentOverlayProps) => {
+  const [isDismissed, setIsDismissed] = useState(false);
+
+  if (isDismissed) return null;
+
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center">
-      {/* Blur backdrop */}
-      <div className="absolute inset-0 backdrop-blur-md bg-background/60" />
-      
-      {/* Overlay content */}
-      <Card className="relative z-10 max-w-md mx-4 border-warning/50 shadow-lg">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center mb-4">
-            <AlertTriangle className="h-6 w-6 text-warning" />
-          </div>
-          <CardTitle className="text-xl">Results Deployed</CardTitle>
-          <CardDescription className="text-base">
-            The results for Academic Year {deployedYear || ''} have been published.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground text-center">
-            To make changes or prepare for a new academic year, please create a new academic year 
-            or update the existing one. This will allow you to:
-          </p>
-          <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-            <li>Promote students to their next class</li>
-            <li>Reset marks and ranks for new evaluation</li>
-            <li>Generate Class 9 promotion data</li>
-          </ul>
-          <Button 
-            className="w-full" 
-            size="lg"
-            onClick={onNavigateToAcademicYear}
-          >
-            <Calendar className="mr-2 h-4 w-4" />
-            Go to Academic Year
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+    <Alert className="mb-4 border-warning/50 bg-warning/10">
+      <AlertTriangle className="h-4 w-4 text-warning" />
+      <AlertTitle className="flex items-center justify-between">
+        <span>Results Deployed for {deployedYear || 'Current Year'}</span>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-6 w-6 -mr-2"
+          onClick={() => setIsDismissed(true)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </AlertTitle>
+      <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
+        <span className="text-sm text-muted-foreground flex-1">
+          To make changes, create a new academic year or update the current one.
+        </span>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="border-warning/50 hover:bg-warning/10"
+          onClick={onNavigateToAcademicYear}
+        >
+          <Calendar className="mr-2 h-3 w-3" />
+          Go to Academic Year
+        </Button>
+      </AlertDescription>
+    </Alert>
   );
 };
 

@@ -80,8 +80,8 @@ const AdminDashboard = () => {
   const { hasDeployedExam, deployedExam, refetch: refetchDeploymentStatus } = useDeploymentStatus();
   const { currentYear, refetch: refetchCurrentYear } = useCurrentAcademicYear();
   
-  // Check if current section should show the deployment overlay
-  const showDeploymentOverlay = hasDeployedExam && blockedSections.includes(activeSection);
+  // Check if current section should show the deployment warning (not overlay anymore)
+  const showDeploymentWarning = hasDeployedExam && blockedSections.includes(activeSection);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -524,7 +524,7 @@ const AdminDashboard = () => {
             </div>
           )}
           
-          {showDeploymentOverlay && (
+          {showDeploymentWarning && (
             <DeploymentOverlay 
               onNavigateToAcademicYear={() => setActiveSection("exams")}
               deployedYear={deployedExam?.academic_year}
