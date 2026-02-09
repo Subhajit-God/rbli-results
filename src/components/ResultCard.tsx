@@ -9,6 +9,7 @@ import { PerformanceIndicator } from "@/components/PerformanceIndicator";
 import { AchievementsList } from "@/components/AchievementBadge";
 import { MarksDisplay, isAbsent, isExempt } from "@/components/AbsentBadge";
 import MarksTableMobile from "@/components/MarksTableMobile";
+import PerformanceAnalysis from "@/components/PerformanceAnalysis";
 interface StudentDetails {
   name: string;
   classNumber: number;
@@ -340,6 +341,22 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
             <div className="signature-line-print">Principal</div>
           </div>
         </div>
+
+        {/* AI Performance Analysis */}
+        <PerformanceAnalysis
+          studentName={student.name}
+          classNumber={student.classNumber}
+          section={student.section}
+          rollNumber={student.rollNumber}
+          examName={examName}
+          marks={marks.map(m => ({
+            subject: m.subject,
+            total: m.total,
+            fullTotal: m.fullTotal,
+            percentage: m.percentage,
+          }))}
+          summary={summary}
+        />
 
         {/* Download Button */}
         {onDownloadPDF && (

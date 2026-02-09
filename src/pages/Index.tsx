@@ -13,6 +13,7 @@ import ResultCardPDF from "@/components/ResultCardPDF";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
+import AIChatbot from "@/components/AIChatbot";
 
 interface PdfAsset {
   asset_type: string;
@@ -456,6 +457,24 @@ const Index = () => {
           Admin Login
         </Link>
       </div>
+
+      {/* AI Chatbot */}
+      <AIChatbot 
+        studentData={resultData ? {
+          name: resultData.student.name,
+          classNumber: resultData.student.classNumber,
+          section: resultData.student.section,
+          rollNumber: resultData.student.rollNumber,
+          examName: resultData.examName,
+          marks: resultData.marks.map(m => ({
+            subject: m.subject,
+            total: m.total,
+            fullTotal: m.fullTotal,
+            percentage: m.percentage,
+          })),
+          summary: resultData.summary,
+        } : undefined}
+      />
 
       {/* Footer */}
       <footer className="glass-effect border-t border-primary/20 py-6 text-center print:hidden transition-colors duration-300 relative z-10">
