@@ -80,8 +80,8 @@ const AdminDashboard = () => {
   const { hasDeployedExam, deployedExam, refetch: refetchDeploymentStatus } = useDeploymentStatus();
   const { currentYear, refetch: refetchCurrentYear } = useCurrentAcademicYear();
   
-  // Check if current section should show the deployment warning (not overlay anymore)
-  const showDeploymentWarning = hasDeployedExam && blockedSections.includes(activeSection);
+  // Only show deployment warning if the CURRENT academic year is deployed
+  const showDeploymentWarning = currentYear?.is_deployed === true && blockedSections.includes(activeSection);
 
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -344,7 +344,7 @@ const AdminDashboard = () => {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed inset-y-0 left-0 z-50 glass-effect border-r border-primary/20 transform transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 glass-sidebar transform transition-all duration-300 ease-in-out",
           "lg:translate-x-0 lg:static",
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
           isSidebarCollapsed ? 'lg:w-16' : 'w-64'
@@ -486,7 +486,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-sm border-b border-border px-4 py-3">
+        <header className="sticky top-0 z-30 glass-nav px-4 py-3">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -527,7 +527,7 @@ const AdminDashboard = () => {
           {showDeploymentWarning && (
             <DeploymentOverlay 
               onNavigateToAcademicYear={() => setActiveSection("exams")}
-              deployedYear={deployedExam?.academic_year}
+              deployedYear={currentYear?.academic_year}
             />
           )}
           {renderSection()}

@@ -64,14 +64,14 @@ export const requiresManualMarks = (subjectName: string, classNumber: number): b
   return false;
 };
 
-// Default full marks structure - Class 5 and 9 use standard values
+// Default full marks structure
 export const DEFAULT_FULL_MARKS = {
-  full_marks_1: 30, // Summative I
-  full_marks_2: 50, // Summative II  
-  full_marks_3: 20  // Summative III
+  full_marks_1: 10, // Summative I (Class 5 default)
+  full_marks_2: 20, // Summative II  
+  full_marks_3: 50  // Summative III
 };
 
-// Class 6, 7, 8 have different Summative III marks (70)
+// Class-wise full marks distribution
 export const getDefaultFullMarks = (classNumber: number, subjectName?: string) => {
   // If subject requires manual marks, return 0 (admin must set)
   if (subjectName && requiresManualMarks(subjectName, classNumber)) {
@@ -82,15 +82,33 @@ export const getDefaultFullMarks = (classNumber: number, subjectName?: string) =
     };
   }
   
-  // Class 6, 7, 8 have: I=30, II=50, III=70
+  // Class 5: I=10, II=20, III=50
+  if (classNumber === 5) {
+    return {
+      full_marks_1: 10,
+      full_marks_2: 20,
+      full_marks_3: 50
+    };
+  }
+
+  // Class 6, 7, 8: I=30, II=50, III=70
   if (classNumber >= 6 && classNumber <= 8) {
     return {
-      full_marks_1: 30, // Summative I
-      full_marks_2: 50, // Summative II  
-      full_marks_3: 70  // Summative III for Class 6,7,8
+      full_marks_1: 30,
+      full_marks_2: 50,
+      full_marks_3: 70
     };
   }
   
-  // Class 5 and 9: I=30, II=50, III=20
+  // Class 9: I=40, II=40, III=90
+  if (classNumber === 9) {
+    return {
+      full_marks_1: 40,
+      full_marks_2: 40,
+      full_marks_3: 90
+    };
+  }
+
+  // Fallback
   return DEFAULT_FULL_MARKS;
 };
