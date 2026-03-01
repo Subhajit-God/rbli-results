@@ -19,6 +19,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  History,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,14 +46,17 @@ import RanksSection from "@/components/admin/RanksSection";
 import DeploySection from "@/components/admin/DeploySection";
 import SettingsSection from "@/components/admin/SettingsSection";
 import VerifySection from "@/components/admin/VerifySection";
+import ActivityLogSection from "@/components/admin/ActivityLogSection";
+import AnalyticsCharts from "@/components/admin/AnalyticsCharts";
 
-type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings";
+type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings" | "activity-log" | "analytics";
 
 // Sections that should be blocked when results are deployed
 const blockedSections: Section[] = ["overview", "students", "subjects", "marks", "ranks", "verify", "settings"];
 
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: GraduationCap },
+  { id: "analytics" as Section, label: "Analytics", icon: BarChart3 },
   { id: "students" as Section, label: "Students", icon: Users },
   { id: "subjects" as Section, label: "Subjects", icon: BookOpen },
   { id: "exams" as Section, label: "Academic Year", icon: FileText },
@@ -59,6 +64,7 @@ const navItems = [
   { id: "ranks" as Section, label: "Ranks", icon: Award },
   { id: "deploy" as Section, label: "Deploy", icon: Rocket },
   { id: "verify" as Section, label: "Verify", icon: ShieldCheck },
+  { id: "activity-log" as Section, label: "Activity Log", icon: History },
   { id: "settings" as Section, label: "Settings", icon: Settings },
 ];
 
@@ -201,6 +207,10 @@ const AdminDashboard = () => {
         return <DeploySection />;
       case "verify":
         return <VerifySection />;
+      case "activity-log":
+        return <ActivityLogSection />;
+      case "analytics":
+        return <AnalyticsCharts />;
       case "settings":
         return <SettingsSection />;
       default:
