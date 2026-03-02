@@ -50,6 +50,7 @@ import VerifySection from "@/components/admin/VerifySection";
 import ActivityLogSection from "@/components/admin/ActivityLogSection";
 import AnalyticsCharts from "@/components/admin/AnalyticsCharts";
 import TopPerformersLeaderboard from "@/components/admin/TopPerformersLeaderboard";
+import NotificationsCenter from "@/components/admin/NotificationsCenter";
 
 type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings" | "activity-log" | "analytics" | "leaderboard";
 
@@ -520,6 +521,7 @@ const AdminDashboard = () => {
                 ]}
               />
             </div>
+            <NotificationsCenter />
             <ThemeToggle />
             <Badge variant="outline" className="text-xs hidden sm:flex">
               Admin
