@@ -8,6 +8,7 @@ import {
   BookOpen,
   ClipboardList,
   Award,
+  Trophy,
   Settings,
   LogOut,
   Menu,
@@ -48,8 +49,9 @@ import SettingsSection from "@/components/admin/SettingsSection";
 import VerifySection from "@/components/admin/VerifySection";
 import ActivityLogSection from "@/components/admin/ActivityLogSection";
 import AnalyticsCharts from "@/components/admin/AnalyticsCharts";
+import TopPerformersLeaderboard from "@/components/admin/TopPerformersLeaderboard";
 
-type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings" | "activity-log" | "analytics";
+type Section = "overview" | "students" | "subjects" | "exams" | "marks" | "ranks" | "deploy" | "verify" | "settings" | "activity-log" | "analytics" | "leaderboard";
 
 // Sections that should be blocked when results are deployed
 const blockedSections: Section[] = ["overview", "students", "subjects", "marks", "ranks", "verify", "settings"];
@@ -57,6 +59,7 @@ const blockedSections: Section[] = ["overview", "students", "subjects", "marks",
 const navItems = [
   { id: "overview" as Section, label: "Overview", icon: GraduationCap },
   { id: "analytics" as Section, label: "Analytics", icon: BarChart3 },
+  { id: "leaderboard" as Section, label: "Leaderboard", icon: Trophy },
   { id: "students" as Section, label: "Students", icon: Users },
   { id: "subjects" as Section, label: "Subjects", icon: BookOpen },
   { id: "exams" as Section, label: "Academic Year", icon: FileText },
@@ -211,6 +214,8 @@ const AdminDashboard = () => {
         return <ActivityLogSection />;
       case "analytics":
         return <AnalyticsCharts />;
+      case "leaderboard":
+        return <TopPerformersLeaderboard />;
       case "settings":
         return <SettingsSection />;
       default:
