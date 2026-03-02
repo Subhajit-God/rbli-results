@@ -10,7 +10,10 @@ import { AchievementsList } from "@/components/AchievementBadge";
 import { MarksDisplay, isAbsent, isExempt } from "@/components/AbsentBadge";
 import MarksTableMobile from "@/components/MarksTableMobile";
 import PerformanceAnalysis from "@/components/PerformanceAnalysis";
+import WhatsAppShare from "@/components/WhatsAppShare";
+import CompareResults from "@/components/CompareResults";
 interface StudentDetails {
+  id?: string;
   name: string;
   classNumber: number;
   section: string;
@@ -44,6 +47,7 @@ interface ResultSummary {
 
 interface ResultCardProps {
   examName: string;
+  examId?: string;
   student: StudentDetails;
   marks: MarksRow[];
   summary: ResultSummary;
@@ -82,7 +86,7 @@ const getPerformanceBgColor = (percentage: number) => {
   return "from-destructive/20 to-destructive/10 border-destructive/40";
 };
 
-const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: ResultCardProps) => {
+const ResultCard = ({ examName, examId, student, marks, summary, onDownloadPDF }: ResultCardProps) => {
   const [showPerformanceBanner, setShowPerformanceBanner] = useState(true);
   const [isHiding, setIsHiding] = useState(false);
 
@@ -358,9 +362,18 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
           summary={summary}
         />
 
-        {/* Download Button */}
-        {onDownloadPDF && (
-          <div className="flex justify-center pt-4 print:hidden">
+        {/* Compare Results across exams */}
+        {examId && student.id && (
+          <CompareResults
+            studentDbId={student.id}
+            studentName={student.name}
+            currentExamId={examId}
+          />
+        )}
+
+        {/* Download & Share Buttons */}
+        <div className="flex flex-col sm:flex-row justify-center gap-3 pt-4 print:hidden">
+          {onDownloadPDF && (
             <Button 
               onClick={onDownloadPDF}
               size="lg"
@@ -369,8 +382,17 @@ const ResultCard = ({ examName, student, marks, summary, onDownloadPDF }: Result
               <Download className="mr-2 h-5 w-5" />
               Download PDF Result
             </Button>
-          </div>
-        )}
+          )}
+          <WhatsAppShare
+            studentName={student.name}
+            examName={examName}
+            percentage={summary.percentage}
+            grade={summary.grade}
+            isPassed={summary.isPassed}
+            rank={summary.rank}
+            className="min-h-[44px] transition-all duration-300 hover:scale-105 active:scale-[0.98]"
+          />
+        </div>
       </CardContent>
     </Card>
   );

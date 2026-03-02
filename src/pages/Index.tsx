@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Shield } from "lucide-react";
+import { AlertCircle, Shield, Trophy } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
 import ResultLookupForm from "@/components/ResultLookupForm";
 import ResultCard from "@/components/ResultCard";
@@ -14,6 +14,9 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { ResultFormSkeleton, ResultCardSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 import AIChatbot from "@/components/AIChatbot";
+import ConfettiEffect from "@/components/ConfettiEffect";
+import TypewriterText from "@/components/TypewriterText";
+import StudentSearchAutocomplete from "@/components/StudentSearchAutocomplete";
 
 interface PdfAsset {
   asset_type: string;
@@ -22,6 +25,7 @@ interface PdfAsset {
 
 interface ResultData {
   student: {
+    id: string;
     name: string;
     classNumber: number;
     section: string;
@@ -189,6 +193,7 @@ const Index = () => {
 
       setResultData({
         student: {
+          id: student.id,
           name: student.name,
           classNumber: student.class_number,
           section: student.section,
@@ -313,6 +318,7 @@ const Index = () => {
 
       setResultData({
         student: {
+          id: student.id,
           name: student.name,
           classNumber: student.class_number,
           section: student.section,
@@ -362,6 +368,11 @@ const Index = () => {
 
       {/* Futuristic Background */}
       <FloatingShapes />
+
+      {/* Confetti Effect */}
+      {resultData && resultData.summary.isPassed && (
+        <ConfettiEffect trigger={true} percentage={resultData.summary.percentage} />
+      )}
       
       {/* PDF Version - Hidden on screen, shown on print */}
       {resultData && (
@@ -394,33 +405,71 @@ const Index = () => {
             <ResultFormSkeleton />
           </div>
         ) : !resultData ? (
-          <div className="max-w-md mx-auto animate-fade-in">
-            <Card className="glass-effect neon-border overflow-hidden transition-all duration-300 hover:shadow-official animate-glow">
-              <div className="h-1.5 cyber-gradient" />
-              <CardHeader className="text-center space-y-3 pb-2">
-                <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 neon-glow flex items-center justify-center mb-2 transition-transform hover:scale-110 duration-300">
-                  <Shield className="h-7 w-7 text-primary" />
-                </div>
-                <CardTitle className="text-2xl md:text-3xl text-foreground font-bold text-glow">
-                  Check Your Result
-                </CardTitle>
-                <CardDescription className="text-base text-muted-foreground">
-                  Enter your details below to view your Summative Evaluation result
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4 pb-8 px-6 md:px-8">
-                {error && (
-                  <Alert variant="destructive" className="mb-6 animate-fade-in neon-border">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-                <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} />
-              </CardContent>
-            </Card>
+          <div className="max-w-md mx-auto space-y-6">
+            {/* Hero text with typewriter */}
+            <div className="text-center mb-8 animate-in fade-in-0 slide-in-from-bottom-4 duration-700">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                <TypewriterText text="Welcome to RBI Results" speed={60} />
+              </h2>
+              <p className="text-muted-foreground animate-in fade-in-0 duration-1000 delay-1000 fill-mode-both">
+                Check your Summative Evaluation results instantly
+              </p>
+            </div>
+
+            {/* Quick Search */}
+            <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+              <StudentSearchAutocomplete
+                onSelect={(student) => {
+                  // Auto-fill the form - just set the student ID for lookup
+                  const formElement = document.getElementById('studentId') as HTMLInputElement;
+                  if (formElement) {
+                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+                    nativeInputValueSetter?.call(formElement, student.student_id);
+                    formElement.dispatchEvent(new Event('input', { bubbles: true }));
+                  }
+                }}
+              />
+            </div>
+
+            <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+              <Card className="glass-effect neon-border overflow-hidden transition-all duration-300 hover:shadow-official animate-glow">
+                <div className="h-1.5 cyber-gradient" />
+                <CardHeader className="text-center space-y-3 pb-2">
+                  <div className="mx-auto w-14 h-14 rounded-full bg-primary/20 neon-glow flex items-center justify-center mb-2 transition-transform hover:scale-110 duration-300">
+                    <Shield className="h-7 w-7 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl md:text-3xl text-foreground font-bold text-glow">
+                    Check Your Result
+                  </CardTitle>
+                  <CardDescription className="text-base text-muted-foreground">
+                    Enter your details below to view your Summative Evaluation result
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 pb-8 px-6 md:px-8">
+                  {error && (
+                    <Alert variant="destructive" className="mb-6 animate-fade-in neon-border">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} />
+                </CardContent>
+              </Card>
+            </div>
             
+            {/* Quick links */}
+            <div className="flex justify-center gap-4 animate-in fade-in-0 duration-700 delay-700 fill-mode-both">
+              <Link
+                to="/leaderboard"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-all duration-200 glass-effect px-4 py-2.5 rounded-full border border-primary/30 shadow-md hover:neon-glow hover:border-primary/50 hover:scale-105"
+              >
+                <Trophy className="h-3.5 w-3.5" />
+                View Leaderboard
+              </Link>
+            </div>
+
             {/* Help text */}
-            <p className="text-center text-sm text-muted-foreground mt-6 animate-fade-in">
+            <p className="text-center text-sm text-muted-foreground animate-fade-in">
               Having trouble? Contact the school office for assistance.
             </p>
           </div>
@@ -429,7 +478,7 @@ const Index = () => {
             <ResultCardSkeleton />
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
+          <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
             <button 
               onClick={() => setResultData(null)}
               className="text-primary hover:text-primary/80 text-sm print:hidden flex items-center gap-1 transition-all duration-200 font-medium hover:translate-x-[-4px]"
@@ -438,6 +487,7 @@ const Index = () => {
             </button>
             <ResultCard 
               examName={resultData.examName}
+              examId={resultData.examId}
               student={resultData.student}
               marks={resultData.marks}
               summary={resultData.summary}
