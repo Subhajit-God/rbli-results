@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Lock, Unlock, AlertTriangle, AlertCircle, FileSpreadsheet, BookOpen } from "lucide-react";
+import { Save, Lock, Unlock, AlertTriangle, AlertCircle, FileSpreadsheet, BookOpen, CheckSquare, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import MarksExcelImport from "./MarksExcelImport";
 import BulkMarksExcelImport from "./BulkMarksExcelImport";
 import { isAbsent, isExempt } from "@/components/AbsentBadge";
@@ -84,6 +85,7 @@ const MarksSection = () => {
   const [showExcelImport, setShowExcelImport] = useState(false);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [focusedCell, setFocusedCell] = useState<{ studentId: string; field: MarkField } | null>(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const { toast } = useToast();
@@ -454,6 +456,74 @@ const MarksSection = () => {
     }
   };
 
+  const toggleSelectAllStudents = () => {
+    if (selectedStudentIds.size === filteredStudents.length) {
+      setSelectedStudentIds(new Set());
+    } else {
+      setSelectedStudentIds(new Set(filteredStudents.map(s => s.id)));
+    }
+  };
+
+  const toggleSelectStudent = (id: string) => {
+    setSelectedStudentIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkLock = async (lock: boolean) => {
+    if (!selectedExam || !selectedSubject) return;
+    try {
+      const ids = Array.from(selectedStudentIds);
+      const { error } = await supabase
+        .from('marks')
+        .update({ is_locked: lock })
+        .eq('exam_id', selectedExam)
+        .eq('subject_id', selectedSubject)
+        .in('student_id', ids);
+
+      if (error) throw error;
+
+      await supabase.from('activity_logs').insert({
+        action: lock ? 'MARKS_BULK_LOCKED' : 'MARKS_BULK_UNLOCKED',
+        details: { exam_id: selectedExam, subject_id: selectedSubject, count: ids.length },
+      });
+
+      toast({ title: lock ? "Locked" : "Unlocked", description: `${ids.length} student marks ${lock ? 'locked' : 'unlocked'}` });
+      setSelectedStudentIds(new Set());
+      fetchMarks();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "Bulk operation failed" });
+    }
+  };
+
+  const handleBulkExportMarks = () => {
+    const selected = filteredStudents.filter(s => selectedStudentIds.has(s.id));
+    const headers = ["Roll No", "Name", "Summative I", "Summative II", "Summative III", "Total"];
+    const fullTotal = currentSubject ? currentSubject.full_marks_1 + currentSubject.full_marks_2 + currentSubject.full_marks_3 : 0;
+    const rows = selected.map(s => {
+      const m = editedMarks[s.id] || { marks_1: '', marks_2: '', marks_3: '' };
+      const m1 = ['AB', 'EX'].includes(m.marks_1.toUpperCase()) ? 0 : parseFloat(m.marks_1) || 0;
+      const m2 = ['AB', 'EX'].includes(m.marks_2.toUpperCase()) ? 0 : parseFloat(m.marks_2) || 0;
+      const m3 = ['AB', 'EX'].includes(m.marks_3.toUpperCase()) ? 0 : parseFloat(m.marks_3) || 0;
+      return [s.roll_number, `"${s.name}"`, m.marks_1 || '-', m.marks_2 || '-', m.marks_3 || '-', `${m1 + m2 + m3}/${fullTotal}`];
+    });
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `marks_export_${currentSubject?.name || 'subject'}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${selected.length} rows exported to CSV` });
+  };
+
+  const isAllStudentsSelected = filteredStudents.length > 0 && selectedStudentIds.size === filteredStudents.length;
+  const isSomeStudentsSelected = selectedStudentIds.size > 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -571,6 +641,28 @@ const MarksSection = () => {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions Toolbar for Marks */}
+      {isSomeStudentsSelected && selectedExam && selectedSubject && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/60 border animate-in slide-in-from-top-2">
+          <CheckSquare className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">{selectedStudentIds.size} selected</span>
+          <div className="flex gap-2 ml-auto">
+            <Button variant="outline" size="sm" onClick={handleBulkExportMarks}>
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleBulkLock(true)}>
+              <Lock className="mr-1.5 h-3.5 w-3.5" /> Lock
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => handleBulkLock(false)}>
+              <Unlock className="mr-1.5 h-3.5 w-3.5" /> Unlock
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedStudentIds(new Set())}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Full Marks Warning */}
       {selectedSubject && !isFullMarksConfigured && (
         <Alert variant="destructive">
@@ -619,6 +711,13 @@ const MarksSection = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={isAllStudentsSelected}
+                          onCheckedChange={toggleSelectAllStudents}
+                          aria-label="Select all"
+                        />
+                      </TableHead>
                       <TableHead className="w-16">Roll</TableHead>
                       <TableHead className="min-w-[150px]">Student Name</TableHead>
                       <TableHead className="text-center w-28">I (FM: {currentSubject.full_marks_1})</TableHead>
@@ -636,7 +735,14 @@ const MarksSection = () => {
                       const total = m1 + m2 + m3;
 
                       return (
-                        <TableRow key={student.id}>
+                        <TableRow key={student.id} data-state={selectedStudentIds.has(student.id) ? "selected" : undefined}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedStudentIds.has(student.id)}
+                              onCheckedChange={() => toggleSelectStudent(student.id)}
+                              aria-label={`Select ${student.name}`}
+                            />
+                          </TableCell>
                           <TableCell className="font-medium">{student.roll_number}</TableCell>
                           <TableCell className="font-medium">{student.name}</TableCell>
                           {(['marks_1', 'marks_2', 'marks_3'] as MarkField[]).map((field) => {

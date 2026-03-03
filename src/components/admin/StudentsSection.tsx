@@ -10,6 +10,8 @@ import {
   Trash2,
   FileSpreadsheet,
   CalendarIcon,
+  Download,
+  CheckSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +52,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import StudentExcelImport from "./StudentExcelImport";
 
@@ -83,9 +86,11 @@ const StudentsSection = () => {
   const [classFilter, setClassFilter] = useState<string>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const [isExcelImportOpen, setIsExcelImportOpen] = useState(false);
   const [isDeploymentActive, setIsDeploymentActive] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     student_id: "",
     name: "",
@@ -143,6 +148,64 @@ const StudentsSection = () => {
     const matchesClass = classFilter === "all" || student.class_number.toString() === classFilter;
     return matchesSearch && matchesClass;
   });
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredStudents.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredStudents.map(s => s.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const ids = Array.from(selectedIds);
+      const { error } = await supabase
+        .from('students')
+        .delete()
+        .in('id', ids);
+
+      if (error) throw error;
+
+      toast({ title: "Deleted", description: `${ids.length} student(s) deleted successfully` });
+      setIsBulkDeleteDialogOpen(false);
+      setSelectedIds(new Set());
+      fetchStudents();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete students",
+      });
+    }
+  };
+
+  const handleBulkExport = () => {
+    const selected = filteredStudents.filter(s => selectedIds.has(s.id));
+    const headers = ["Student ID", "Name", "Class", "Section", "Roll No", "Father's Name", "Mother's Name", "Date of Birth"];
+    const rows = selected.map(s => [
+      s.student_id, s.name, s.class_number, s.section, s.roll_number,
+      s.father_name, s.mother_name, s.date_of_birth,
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.map(v => `"${v}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `students_export_${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Exported", description: `${selected.length} student(s) exported to CSV` });
+  };
 
   const handleOpenDialog = (student?: Student) => {
     if (student) {
@@ -266,6 +329,9 @@ const StudentsSection = () => {
     }
   };
 
+  const isAllSelected = filteredStudents.length > 0 && selectedIds.size === filteredStudents.length;
+  const isSomeSelected = selectedIds.size > 0;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -303,6 +369,25 @@ const StudentsSection = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {isSomeSelected && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/60 border animate-in slide-in-from-top-2">
+          <CheckSquare className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <div className="flex gap-2 ml-auto">
+            <Button variant="outline" size="sm" onClick={handleBulkExport}>
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Export CSV
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => setIsBulkDeleteDialogOpen(true)}>
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete ({selectedIds.size})
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Students ({filteredStudents.length})</CardTitle>
@@ -319,6 +404,13 @@ const StudentsSection = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead>Student ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Class</TableHead>
@@ -330,7 +422,14 @@ const StudentsSection = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
+                    <TableRow key={student.id} data-state={selectedIds.has(student.id) ? "selected" : undefined}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(student.id)}
+                          onCheckedChange={() => toggleSelect(student.id)}
+                          aria-label={`Select ${student.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{student.student_id}</TableCell>
                       <TableCell>{student.name}</TableCell>
                       <TableCell>{student.class_number}</TableCell>
@@ -529,6 +628,24 @@ const StudentsSection = () => {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Students</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size} student(s)? This action cannot be undone and will also delete all associated marks and ranks.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground">
+              Delete All ({selectedIds.size})
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
