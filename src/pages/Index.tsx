@@ -13,7 +13,7 @@ import { ResultFormSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 import AIChatbot from "@/components/AIChatbot";
 import TypewriterText from "@/components/TypewriterText";
-import StudentSearchAutocomplete from "@/components/StudentSearchAutocomplete";
+
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -119,17 +119,7 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Quick Search */}
             <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
-              <StudentSearchAutocomplete
-                onSelect={(student) => {
-                  // Navigate to student profile
-                  navigate(`/student/${student.student_id}`);
-                }}
-              />
-            </div>
-
-            <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
               <Card className="glass-effect neon-border overflow-hidden transition-all duration-300 hover:shadow-official animate-glow">
                 <div className="h-1.5 cyber-gradient" />
                 <CardHeader className="text-center space-y-3 pb-2">
