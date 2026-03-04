@@ -43,25 +43,10 @@ const Index = () => {
     setError(null);
 
     try {
-      // Check if any exam is deployed
-      const { data: deployedExams, error: examError } = await supabase
-        .from("exams")
-        .select("id")
-        .eq("is_deployed", true)
-        .limit(1);
-
-      if (examError) throw examError;
-
-      if (!deployedExams || deployedExams.length === 0) {
-        setError("Result not published yet.");
-        setIsLoading(false);
-        return;
-      }
-
       // Find student matching criteria
       const { data: students, error: studentError } = await supabase
         .from("students")
-        .select("student_id")
+        .select("student_id, academic_year_id")
         .eq("student_id", data.studentId)
         .eq("class_number", parseInt(data.classNumber))
         .eq("date_of_birth", format(data.dob, "yyyy-MM-dd"));
@@ -74,8 +59,26 @@ const Index = () => {
         return;
       }
 
+      const student = students[0];
+
+      // Check if the student's academic year exam is deployed
+      const { data: deployedExam, error: examError } = await supabase
+        .from("exams")
+        .select("id")
+        .eq("id", student.academic_year_id)
+        .eq("is_deployed", true)
+        .maybeSingle();
+
+      if (examError) throw examError;
+
+      if (!deployedExam) {
+        setError("Result not published yet for your academic year.");
+        setIsLoading(false);
+        return;
+      }
+
       // Navigate to result page
-      navigate(`/result?sid=${students[0].student_id}&eid=${deployedExams[0].id}`);
+      navigate(`/result?sid=${student.student_id}&eid=${deployedExam.id}`);
     } catch (err: any) {
       console.error("Error:", err);
       toast({
