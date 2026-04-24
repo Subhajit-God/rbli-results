@@ -131,14 +131,9 @@ const AdminAuth = () => {
       }
 
       if (data.user) {
-        // Check if user is admin
-        const { data: adminRole, error: roleError } = await supabase
-          .from('admin_roles')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .single();
+        const isAdmin = await verifyAdmin(data.user.id);
 
-        if (roleError || !adminRole) {
+        if (!isAdmin) {
           await supabase.auth.signOut();
           setError("You are not authorized as an administrator.");
           return;
@@ -148,7 +143,7 @@ const AdminAuth = () => {
           title: "Login Successful",
           description: "Welcome back, Admin!",
         });
-        navigate('/admin/dashboard');
+        navigate(safeRedirect, { replace: true });
       }
     } catch (err: any) {
       if (err instanceof z.ZodError) {
@@ -341,6 +336,8 @@ const AdminAuth = () => {
                         id="login-email"
                         name="email"
                         type="email"
+                        autoComplete="email"
+                        maxLength={254}
                         placeholder="admin@school.edu"
                         value={formData.email}
                         onChange={handleInputChange}
@@ -357,6 +354,8 @@ const AdminAuth = () => {
                           id="login-password"
                           name="password"
                           type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          maxLength={128}
                           placeholder="••••••••"
                           value={formData.password}
                           onChange={handleInputChange}
@@ -403,6 +402,8 @@ const AdminAuth = () => {
                           id="register-email"
                           name="email"
                           type="email"
+                          autoComplete="email"
+                          maxLength={254}
                           placeholder="admin@school.edu"
                           value={formData.email}
                           onChange={handleInputChange}
@@ -419,6 +420,8 @@ const AdminAuth = () => {
                             id="register-password"
                             name="password"
                             type={showPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            maxLength={128}
                             placeholder="••••••••"
                             value={formData.password}
                             onChange={handleInputChange}
@@ -449,6 +452,8 @@ const AdminAuth = () => {
                             id="confirm-password"
                             name="confirmPassword"
                             type={showConfirmPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            maxLength={128}
                             placeholder="••••••••"
                             value={formData.confirmPassword}
                             onChange={handleInputChange}
