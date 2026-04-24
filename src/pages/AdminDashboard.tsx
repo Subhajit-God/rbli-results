@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
@@ -75,6 +75,9 @@ const navItems = [
   { id: "settings" as Section, label: "Settings", icon: Settings },
 ];
 
+const sectionSet = new Set<Section>(navItems.map((item) => item.id));
+const getSectionPath = (section: Section) => section === "overview" ? "/admin/dashboard" : `/admin/dashboard/${section}`;
+
 const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -98,7 +101,28 @@ const AdminDashboard = () => {
   const showDeploymentWarning = currentYear?.is_deployed === true && blockedSections.includes(activeSection);
 
   const navigate = useNavigate();
+  const { section } = useParams<{ section?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const querySection = searchParams.get("tab") || searchParams.get("section") || searchParams.get("view");
+    const routeSection = section || querySection || "overview";
+
+    if (sectionSet.has(routeSection as Section)) {
+      setActiveSection(routeSection as Section);
+      if (!section && querySection) navigate(getSectionPath(routeSection as Section), { replace: true });
+    } else {
+      navigate("/admin/dashboard", { replace: true });
+    }
+  }, [section, searchParams, navigate]);
+
+  const goToSection = (nextSection: Section) => {
+    setActiveSection(nextSection);
+    setIsSidebarOpen(false);
+    setSearchParams({ view: nextSection });
+    navigate(getSectionPath(nextSection));
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -107,7 +131,7 @@ const AdminDashboard = () => {
         setUser(session?.user ?? null);
         
         if (!session) {
-          navigate('/admin/auth');
+          navigate(`/admin/auth?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         }
       }
     );
@@ -117,7 +141,7 @@ const AdminDashboard = () => {
       setUser(session?.user ?? null);
       
       if (!session) {
-        navigate('/admin/auth');
+        navigate(`/admin/auth?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       } else {
         // Verify admin role
         setTimeout(() => {
