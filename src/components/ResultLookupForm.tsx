@@ -40,11 +40,10 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
 
   const lookupSchema = z.object({
     studentId: z.string()
-      .trim()
-      .replace(/[\u0000-\u001F\u007F]/g, "")
-      .min(1, "Student ID is required")
+      .transform((value) => value.trim().replace(/[\u0000-\u001F\u007F]/g, ""))
+      .pipe(z.string().min(1, "Student ID is required")
       .max(40, "Student ID is too long")
-      .regex(/^[A-Za-z0-9_-]+$/, "Student ID can only contain letters, numbers, - or _"),
+      .regex(/^[A-Za-z0-9_-]+$/, "Student ID can only contain letters, numbers, - or _")),
     classNumber: z.enum(["5", "6", "7", "8", "9"], { message: "Class is required" }),
     dob: z.date({ message: "Date of Birth is required" })
       .min(new Date("1990-01-01"), "Date of Birth is outside the allowed range")
@@ -90,7 +89,7 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
     const validated = validateForm();
     if (validated) {
       setLoadingProgress(0);
-      onSubmit(validated);
+      onSubmit({ studentId: validated.studentId, classNumber: validated.classNumber, dob: validated.dob });
     }
   };
 
