@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PdfAssetsSection from "./PdfAssetsSection";
+import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
+import { downloadPromotionExport } from "@/lib/promotionExport";
 
 const SettingsSection = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -33,6 +35,7 @@ const SettingsSection = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isPromotionExporting, setIsPromotionExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [resetError, setResetError] = useState("");
   const [deleteAdminError, setDeleteAdminError] = useState("");
@@ -60,6 +63,34 @@ const SettingsSection = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentYear } = useCurrentAcademicYear();
+
+  const handlePromotionExport = async () => {
+    if (!currentYear?.is_deployed) return;
+
+    setIsPromotionExporting(true);
+    try {
+      const summary = await downloadPromotionExport({
+        id: currentYear.id,
+        name: currentYear.name,
+        academic_year: currentYear.academic_year,
+        deployed_at: null,
+      });
+
+      toast({
+        title: "Promotion Export Downloaded",
+        description: `Exported ${summary.promotedStudentsCount} promoted students, ${summary.subjectsCount} subjects, and ${summary.marksCount} marks.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message || "Failed to download promotion export",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPromotionExporting(false);
+    }
+  };
 
   const handleExportData = async () => {
     setIsExporting(true);
