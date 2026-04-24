@@ -434,6 +434,35 @@ const SettingsSection = () => {
       {/* PDF Signature & Stamp */}
       <PdfAssetsSection />
 
+      {currentYear?.is_deployed && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5 text-warning" />
+              Promotion Export
+            </CardTitle>
+            <CardDescription>
+              Download promoted student data with subjects, marks, and ranks for {currentYear.academic_year} before resetting the database.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handlePromotionExport} disabled={isPromotionExporting} className="w-full sm:w-auto">
+              {isPromotionExporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Promoted Student JSON
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Backup & Export */}
       <Card>
         <CardHeader>
@@ -561,6 +590,14 @@ const SettingsSection = () => {
                 <p className="text-sm text-muted-foreground mt-1">
                   Permanently delete ALL data including students, subjects, exams, marks, results, ranks, and your admin account.
                 </p>
+                {currentYear?.is_deployed && (
+                  <Alert className="mt-3 border-warning/50 bg-warning/10">
+                    <Download className="h-4 w-4 text-warning" />
+                    <AlertDescription>
+                      Download the promoted student JSON above before resetting. Reset stays separate and will not auto-start after download.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <Alert variant="destructive" className="mt-3">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
