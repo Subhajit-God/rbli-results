@@ -343,7 +343,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:neon-glow border-primary/30"
-                  onClick={() => setActiveSection("students")}
+                  onClick={() => goToSection("students")}
                 >
                   <Users className="h-6 w-6 text-primary" />
                   <span>Add Students</span>
@@ -351,7 +351,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:green-glow border-secondary/30"
-                  onClick={() => setActiveSection("marks")}
+                  onClick={() => goToSection("marks")}
                 >
                   <ClipboardList className="h-6 w-6 text-secondary" />
                   <span>Enter Marks</span>
@@ -359,7 +359,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-official border-accent/30"
-                  onClick={() => setActiveSection("ranks")}
+                  onClick={() => goToSection("ranks")}
                 >
                   <Award className="h-6 w-6 text-accent" />
                   <span>Finalize Ranks</span>
@@ -367,7 +367,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:orange-glow border-warning/30"
-                  onClick={() => setActiveSection("deploy")}
+                  onClick={() => goToSection("deploy")}
                 >
                   <Rocket className="h-6 w-6 text-warning" />
                   <span>Deploy Results</span>
@@ -486,8 +486,7 @@ const AdminDashboard = () => {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => {
-                        setActiveSection(item.id);
-                        setIsSidebarOpen(false);
+                        goToSection(item.id);
                       }}
                       className={cn(
                         "w-full flex items-center justify-center p-3 rounded-md transition-all duration-200",
@@ -507,8 +506,7 @@ const AdminDashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActiveSection(item.id);
-                    setIsSidebarOpen(false);
+                    goToSection(item.id);
                   }}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
@@ -627,7 +625,7 @@ const AdminDashboard = () => {
           
           {showDeploymentWarning && (
             <DeploymentOverlay 
-              onNavigateToAcademicYear={() => setActiveSection("exams")}
+              onNavigateToAcademicYear={() => goToSection("exams")}
               deployedYear={currentYear?.academic_year}
             />
           )}
