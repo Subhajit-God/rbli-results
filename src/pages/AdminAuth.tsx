@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -14,15 +14,18 @@ import { AlertCircle, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert, ShieldCheck 
 import ResultHeader from "@/components/ResultHeader";
 import FloatingShapes from "@/components/FloatingShapes";
 
+const sanitizeEmail = (value: string) => value.trim().toLowerCase().replace(/[\u0000-\u001F\u007F]/g, "");
+const sanitizePassword = (value: string) => value.replace(/[\u0000-\u001F\u007F]/g, "");
+
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().transform(sanitizeEmail).pipe(z.string().email("Please enter a valid email address").max(254, "Email is too long")),
+  password: z.string().transform(sanitizePassword).pipe(z.string().min(6, "Password must be at least 6 characters").max(128, "Password is too long")),
 });
 
 const registerSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  confirmPassword: z.string(),
+  email: z.string().transform(sanitizeEmail).pipe(z.string().email("Please enter a valid email address").max(254, "Email is too long")),
+  password: z.string().transform(sanitizePassword).pipe(z.string().min(8, "Password must be at least 8 characters").max(128, "Password is too long")),
+  confirmPassword: z.string().transform(sanitizePassword),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -43,23 +46,28 @@ const AdminAuth = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { adminExists, isLoading: isCheckingAdmin } = useAdminCheck();
+
+  const safeRedirect = searchParams.get("redirect")?.startsWith("/admin/dashboard")
+    ? searchParams.get("redirect")!
+    : "/admin/dashboard";
+
+  const verifyAdmin = async (userId: string) => {
+    const { data, error } = await supabase.rpc("is_admin", { _user_id: userId });
+    if (error) throw error;
+    return data === true;
+  };
 
   useEffect(() => {
     // Check if already logged in
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Check if user is admin
-        const { data: adminRole } = await supabase
-          .from('admin_roles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (adminRole) {
-          navigate('/admin/dashboard');
+        const isAdmin = await verifyAdmin(session.user.id);
+        if (isAdmin) {
+          navigate(safeRedirect, { replace: true });
         }
       }
     };
@@ -69,22 +77,16 @@ const AdminAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
-          // Check admin role and redirect
-          const { data: adminRole } = await supabase
-            .from('admin_roles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          if (adminRole) {
-            navigate('/admin/dashboard');
+          const isAdmin = await verifyAdmin(session.user.id);
+          if (isAdmin) {
+            navigate(safeRedirect, { replace: true });
           }
         }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, safeRedirect]);
 
   // Auto-switch to login tab if admin exists
   useEffect(() => {
@@ -96,7 +98,8 @@ const AdminAuth = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === "email" ? value.replace(/[\u0000-\u001F\u007F]/g, "") : value;
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     setError(null);
   };
@@ -128,14 +131,9 @@ const AdminAuth = () => {
       }
 
       if (data.user) {
-        // Check if user is admin
-        const { data: adminRole, error: roleError } = await supabase
-          .from('admin_roles')
-          .select('*')
-          .eq('user_id', data.user.id)
-          .single();
+        const isAdmin = await verifyAdmin(data.user.id);
 
-        if (roleError || !adminRole) {
+        if (!isAdmin) {
           await supabase.auth.signOut();
           setError("You are not authorized as an administrator.");
           return;
@@ -145,7 +143,7 @@ const AdminAuth = () => {
           title: "Login Successful",
           description: "Welcome back, Admin!",
         });
-        navigate('/admin/dashboard');
+        navigate(safeRedirect, { replace: true });
       }
     } catch (err: any) {
       if (err instanceof z.ZodError) {
@@ -338,6 +336,8 @@ const AdminAuth = () => {
                         id="login-email"
                         name="email"
                         type="email"
+                        autoComplete="email"
+                        maxLength={254}
                         placeholder="admin@school.edu"
                         value={formData.email}
                         onChange={handleInputChange}
@@ -354,6 +354,8 @@ const AdminAuth = () => {
                           id="login-password"
                           name="password"
                           type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          maxLength={128}
                           placeholder="••••••••"
                           value={formData.password}
                           onChange={handleInputChange}
@@ -400,6 +402,8 @@ const AdminAuth = () => {
                           id="register-email"
                           name="email"
                           type="email"
+                          autoComplete="email"
+                          maxLength={254}
                           placeholder="admin@school.edu"
                           value={formData.email}
                           onChange={handleInputChange}
@@ -416,6 +420,8 @@ const AdminAuth = () => {
                             id="register-password"
                             name="password"
                             type={showPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            maxLength={128}
                             placeholder="••••••••"
                             value={formData.password}
                             onChange={handleInputChange}
@@ -446,6 +452,8 @@ const AdminAuth = () => {
                             id="confirm-password"
                             name="confirmPassword"
                             type={showConfirmPassword ? "text" : "password"}
+                            autoComplete="new-password"
+                            maxLength={128}
                             placeholder="••••••••"
                             value={formData.confirmPassword}
                             onChange={handleInputChange}

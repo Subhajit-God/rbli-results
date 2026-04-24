@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { format } from "date-fns";
 import { CalendarIcon, Search, User, BookOpen, Loader2, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,8 +38,19 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Simulate loading progress
-  useState(() => {
+  const lookupSchema = z.object({
+    studentId: z.string()
+      .transform((value) => value.trim().replace(/[\u0000-\u001F\u007F]/g, ""))
+      .pipe(z.string().min(1, "Student ID is required")
+      .max(40, "Student ID is too long")
+      .regex(/^[A-Za-z0-9_-]+$/, "Student ID can only contain letters, numbers, - or _")),
+    classNumber: z.enum(["5", "6", "7", "8", "9"], { message: "Class is required" }),
+    dob: z.date({ message: "Date of Birth is required" })
+      .min(new Date("1990-01-01"), "Date of Birth is outside the allowed range")
+      .max(new Date(), "Date of Birth cannot be in the future"),
+  });
+
+  useEffect(() => {
     if (isLoading) {
       setLoadingProgress(0);
       const interval = setInterval(() => {
@@ -54,30 +66,30 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
     } else {
       setLoadingProgress(100);
     }
-  });
+  }, [isLoading]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!studentId.trim()) {
-      newErrors.studentId = "Student ID is required";
-    }
-    if (!classNumber) {
-      newErrors.classNumber = "Class is required";
-    }
-    if (!dob) {
-      newErrors.dob = "Date of Birth is required";
+    const result = lookupSchema.safeParse({ studentId, classNumber, dob });
+
+    if (!result.success) {
+      result.error.issues.forEach((issue) => {
+        const key = issue.path[0] as string;
+        if (key) newErrors[key] = issue.message;
+      });
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return result.success ? result.data : null;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm() && dob) {
+    const validated = validateForm();
+    if (validated) {
       setLoadingProgress(0);
-      onSubmit({ studentId: studentId.trim(), classNumber, dob });
+      onSubmit({ studentId: validated.studentId, classNumber: validated.classNumber, dob: validated.dob });
     }
   };
 
@@ -101,11 +113,12 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
           placeholder="e.g., STU2024001"
           value={studentId}
           onChange={(e) => {
-            setStudentId(e.target.value);
+            setStudentId(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40));
             if (errors.studentId) setErrors(prev => ({ ...prev, studentId: "" }));
           }}
           aria-describedby={errors.studentId ? "studentId-error" : undefined}
           aria-invalid={!!errors.studentId}
+          maxLength={40}
           className={cn(
             "h-12 min-h-[44px] text-base transition-all duration-200 focus:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             errors.studentId 

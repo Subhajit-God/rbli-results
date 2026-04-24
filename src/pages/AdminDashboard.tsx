@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
@@ -75,6 +75,9 @@ const navItems = [
   { id: "settings" as Section, label: "Settings", icon: Settings },
 ];
 
+const sectionSet = new Set<Section>(navItems.map((item) => item.id));
+const getSectionPath = (section: Section) => section === "overview" ? "/admin/dashboard" : `/admin/dashboard/${section}`;
+
 const AdminDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -98,7 +101,28 @@ const AdminDashboard = () => {
   const showDeploymentWarning = currentYear?.is_deployed === true && blockedSections.includes(activeSection);
 
   const navigate = useNavigate();
+  const { section } = useParams<{ section?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const querySection = searchParams.get("tab") || searchParams.get("section") || searchParams.get("view");
+    const routeSection = section || querySection || "overview";
+
+    if (sectionSet.has(routeSection as Section)) {
+      setActiveSection(routeSection as Section);
+      if (!section && querySection) navigate(getSectionPath(routeSection as Section), { replace: true });
+    } else {
+      navigate("/admin/dashboard", { replace: true });
+    }
+  }, [section, searchParams, navigate]);
+
+  const goToSection = (nextSection: Section) => {
+    setActiveSection(nextSection);
+    setIsSidebarOpen(false);
+    setSearchParams({ view: nextSection });
+    navigate(getSectionPath(nextSection));
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -107,7 +131,7 @@ const AdminDashboard = () => {
         setUser(session?.user ?? null);
         
         if (!session) {
-          navigate('/admin/auth');
+          navigate(`/admin/auth?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
         }
       }
     );
@@ -117,7 +141,7 @@ const AdminDashboard = () => {
       setUser(session?.user ?? null);
       
       if (!session) {
-        navigate('/admin/auth');
+        navigate(`/admin/auth?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       } else {
         // Verify admin role
         setTimeout(() => {
@@ -319,7 +343,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:neon-glow border-primary/30"
-                  onClick={() => setActiveSection("students")}
+                  onClick={() => goToSection("students")}
                 >
                   <Users className="h-6 w-6 text-primary" />
                   <span>Add Students</span>
@@ -327,7 +351,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:green-glow border-secondary/30"
-                  onClick={() => setActiveSection("marks")}
+                  onClick={() => goToSection("marks")}
                 >
                   <ClipboardList className="h-6 w-6 text-secondary" />
                   <span>Enter Marks</span>
@@ -335,7 +359,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:shadow-official border-accent/30"
-                  onClick={() => setActiveSection("ranks")}
+                  onClick={() => goToSection("ranks")}
                 >
                   <Award className="h-6 w-6 text-accent" />
                   <span>Finalize Ranks</span>
@@ -343,7 +367,7 @@ const AdminDashboard = () => {
                 <Button 
                   variant="outline" 
                   className="h-auto flex-col py-4 gap-2 transition-all duration-200 hover:scale-105 hover:orange-glow border-warning/30"
-                  onClick={() => setActiveSection("deploy")}
+                  onClick={() => goToSection("deploy")}
                 >
                   <Rocket className="h-6 w-6 text-warning" />
                   <span>Deploy Results</span>
@@ -462,8 +486,7 @@ const AdminDashboard = () => {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => {
-                        setActiveSection(item.id);
-                        setIsSidebarOpen(false);
+                        goToSection(item.id);
                       }}
                       className={cn(
                         "w-full flex items-center justify-center p-3 rounded-md transition-all duration-200",
@@ -483,8 +506,7 @@ const AdminDashboard = () => {
                 <button
                   key={item.id}
                   onClick={() => {
-                    setActiveSection(item.id);
-                    setIsSidebarOpen(false);
+                    goToSection(item.id);
                   }}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all duration-200",
@@ -603,7 +625,7 @@ const AdminDashboard = () => {
           
           {showDeploymentWarning && (
             <DeploymentOverlay 
-              onNavigateToAcademicYear={() => setActiveSection("exams")}
+              onNavigateToAcademicYear={() => goToSection("exams")}
               deployedYear={currentYear?.academic_year}
             />
           )}
