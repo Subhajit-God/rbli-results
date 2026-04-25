@@ -53,9 +53,7 @@ const AdminAuth = () => {
     : "/admin/dashboard";
 
   const verifyAdmin = async (userId: string) => {
-    const { data, error } = await supabase.rpc("is_admin", { _user_id: userId });
-    if (error) throw error;
-    return data === true;
+    return await isCurrentUserAdmin(userId);
   };
 
   useEffect(() => {
