@@ -169,6 +169,7 @@ const AdminDashboard = () => {
       .single();
 
     if (error || !adminRole) {
+      clearAdminCheckCache();
       await supabase.auth.signOut();
       navigate('/admin/auth');
       toast({
