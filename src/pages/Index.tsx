@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ import { ResultFormSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 import AIChatbot from "@/components/AIChatbot";
 import TypewriterText from "@/components/TypewriterText";
+
+const LOOKUP_DEBOUNCE_MS = 350;
 
 
 const Index = () => {
