@@ -136,6 +136,39 @@ export type Database = {
         }
         Relationships: []
       }
+      lookup_attempts: {
+        Row: {
+          attempt_date: string
+          class_number: number | null
+          created_at: string
+          id: string
+          ip_address: string
+          student_id: string | null
+          success: boolean
+          user_agent: string | null
+        }
+        Insert: {
+          attempt_date?: string
+          class_number?: number | null
+          created_at?: string
+          id?: string
+          ip_address: string
+          student_id?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Update: {
+          attempt_date?: string
+          class_number?: number | null
+          created_at?: string
+          id?: string
+          ip_address?: string
+          student_id?: string | null
+          success?: boolean
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       marks: {
         Row: {
           created_at: string

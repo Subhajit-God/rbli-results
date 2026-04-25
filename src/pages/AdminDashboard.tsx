@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { clearAdminCheckCache } from "@/hooks/useAdminCheck";
 import { useToast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
 import {
@@ -168,6 +169,7 @@ const AdminDashboard = () => {
       .single();
 
     if (error || !adminRole) {
+      clearAdminCheckCache();
       await supabase.auth.signOut();
       navigate('/admin/auth');
       toast({
@@ -201,6 +203,7 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = async () => {
+    clearAdminCheckCache();
     await supabase.auth.signOut();
     toast({
       title: "Logged Out",
