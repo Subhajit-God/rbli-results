@@ -94,7 +94,9 @@ const AdminAuth = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const nextValue = name === "email" ? value.replace(/[\u0000-\u001F\u007F]/g, "") : value;
+    let nextValue = value;
+    if (name === "email") nextValue = sanitizeEmail(value);
+    else if (name === "password" || name === "confirmPassword") nextValue = sanitizePassword(value);
     setFormData((prev) => ({ ...prev, [name]: nextValue }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
     setError(null);
