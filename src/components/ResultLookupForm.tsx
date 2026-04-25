@@ -114,12 +114,12 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
           placeholder="e.g., STU2024001"
           value={studentId}
           onChange={(e) => {
-            setStudentId(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40));
+            setStudentId(sanitizeStudentId(e.target.value));
             if (errors.studentId) setErrors(prev => ({ ...prev, studentId: "" }));
           }}
           aria-describedby={errors.studentId ? "studentId-error" : undefined}
           aria-invalid={!!errors.studentId}
-          maxLength={40}
+          maxLength={MAX_LENGTHS.studentId}
           className={cn(
             "h-12 min-h-[44px] text-base transition-all duration-200 focus:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             errors.studentId 
