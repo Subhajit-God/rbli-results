@@ -40,48 +40,56 @@ const Index = () => {
     }
   }, [sidParam, eidParam, isInitialLoading, navigate]);
 
-  const handleLookup = async (data: { studentId: string; classNumber: string; dob: Date }) => {
+  const abortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSubmitRef = useRef<number>(0);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const performLookup = async (
+    data: { studentId: string; classNumber: string; dob: Date },
+    signal: AbortSignal,
+  ) => {
     setIsLoading(true);
     setError(null);
-
     try {
-      // Find student matching criteria
-      const { data: students, error: studentError } = await supabase
-        .from("students")
-        .select("student_id, academic_year_id")
-        .eq("student_id", data.studentId)
-        .eq("class_number", parseInt(data.classNumber))
-        .eq("date_of_birth", format(data.dob, "yyyy-MM-dd"));
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/lookup-result`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({
+          studentId: data.studentId,
+          classNumber: data.classNumber,
+          dob: format(data.dob, "yyyy-MM-dd"),
+        }),
+        signal,
+      });
 
-      if (studentError) throw studentError;
+      if (signal.aborted) return;
+      const json = await res.json().catch(() => ({}));
 
-      if (!students || students.length === 0) {
-        setError("Invalid details. Please check and try again.");
-        setIsLoading(false);
+      if (res.status === 429) {
+        setError(json.error ?? "Too many lookup attempts. Try again tomorrow.");
+        return;
+      }
+      if (!res.ok || !json.success) {
+        setError(json.error ?? "Lookup failed. Please try again.");
         return;
       }
 
-      const student = students[0];
-
-      // Check if the student's academic year exam is deployed
-      const { data: deployedExam, error: examError } = await supabase
-        .from("exams")
-        .select("id")
-        .eq("id", student.academic_year_id)
-        .eq("is_deployed", true)
-        .maybeSingle();
-
-      if (examError) throw examError;
-
-      if (!deployedExam) {
-        setError("Result not published yet for your academic year.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Navigate to result page
-      navigate(`/result?sid=${student.student_id}&eid=${deployedExam.id}`);
+      navigate(`/result?sid=${json.studentId}&eid=${json.examId}`);
     } catch (err: any) {
+      if (err?.name === "AbortError") return;
       console.error("Error:", err);
       toast({
         variant: "destructive",
@@ -89,8 +97,27 @@ const Index = () => {
         description: "An error occurred. Please try again.",
       });
     } finally {
-      setIsLoading(false);
+      if (!signal.aborted) setIsLoading(false);
     }
+  };
+
+  const handleLookup = (data: { studentId: string; classNumber: string; dob: Date }) => {
+    // Debounce repeated clicks
+    const now = Date.now();
+    if (now - lastSubmitRef.current < LOOKUP_DEBOUNCE_MS) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    }
+    lastSubmitRef.current = now;
+
+    // Cancel any in-flight lookup
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      performLookup(data, controller.signal);
+    }, LOOKUP_DEBOUNCE_MS);
   };
 
   return (
