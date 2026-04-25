@@ -202,6 +202,7 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = async () => {
+    clearAdminCheckCache();
     await supabase.auth.signOut();
     toast({
       title: "Logged Out",
