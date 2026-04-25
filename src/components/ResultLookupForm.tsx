@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { format } from "date-fns";
+import { sanitizeStudentId, MAX_LENGTHS } from "@/lib/sanitize";
 import { CalendarIcon, Search, User, BookOpen, Loader2, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
