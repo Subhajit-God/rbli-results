@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useAdminCheck, isCurrentUserAdmin } from "@/hooks/useAdminCheck";
 import { z } from "zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
 import FloatingShapes from "@/components/FloatingShapes";
-
-const sanitizeEmail = (value: string) => value.trim().toLowerCase().replace(/[\u0000-\u001F\u007F]/g, "");
-const sanitizePassword = (value: string) => value.replace(/[\u0000-\u001F\u007F]/g, "");
+import { sanitizeEmail, sanitizePassword, MAX_LENGTHS } from "@/lib/sanitize";
 
 const loginSchema = z.object({
   email: z.string().transform(sanitizeEmail).pipe(z.string().email("Please enter a valid email address").max(254, "Email is too long")),
