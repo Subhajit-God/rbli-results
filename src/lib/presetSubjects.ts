@@ -46,7 +46,7 @@ export const PRESET_SUBJECTS: Record<number, string[]> = {
     "Geography",
     "Physical Science",
     "Maths",
-    "History"
+    "History",
     "Life Science"
   ]
 };
