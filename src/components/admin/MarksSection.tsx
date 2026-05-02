@@ -86,7 +86,10 @@ const MarksSection = () => {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [focusedCell, setFocusedCell] = useState<{ studentId: string; field: MarkField } | null>(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
-  
+  const [isClassLocked, setIsClassLocked] = useState(false);
+  const [classLockInfo, setClassLockInfo] = useState<{ locked_at: string; note: string | null } | null>(null);
+  const [isTogglingClassLock, setIsTogglingClassLock] = useState(false);
+
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const { toast } = useToast();
 
@@ -102,6 +105,76 @@ const MarksSection = () => {
       fetchMarks();
     }
   }, [selectedExam, selectedSubject]);
+
+  useEffect(() => {
+    fetchClassLock();
+  }, [selectedExam, selectedClass]);
+
+  const fetchClassLock = async () => {
+    if (!selectedExam || !selectedClass) {
+      setIsClassLocked(false);
+      setClassLockInfo(null);
+      return;
+    }
+    const { data } = await supabase
+      .from('class_locks')
+      .select('locked_at, note')
+      .eq('exam_id', selectedExam)
+      .eq('class_number', parseInt(selectedClass))
+      .maybeSingle();
+    if (data) {
+      setIsClassLocked(true);
+      setClassLockInfo({ locked_at: data.locked_at, note: data.note });
+    } else {
+      setIsClassLocked(false);
+      setClassLockInfo(null);
+    }
+  };
+
+  const handleToggleClassLock = async () => {
+    if (!selectedExam || !selectedClass) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ variant: "destructive", title: "Not authenticated" });
+      return;
+    }
+
+    setIsTogglingClassLock(true);
+    try {
+      if (isClassLocked) {
+        const { error } = await supabase
+          .from('class_locks')
+          .delete()
+          .eq('exam_id', selectedExam)
+          .eq('class_number', parseInt(selectedClass));
+        if (error) throw error;
+        await supabase.from('activity_logs').insert({
+          action: 'CLASS_MARKS_UNLOCKED',
+          details: { exam_id: selectedExam, class_number: parseInt(selectedClass) },
+        });
+        toast({ title: "Class unlocked", description: `Class ${selectedClass} marks can be edited again.` });
+      } else {
+        const { error } = await supabase
+          .from('class_locks')
+          .insert({
+            exam_id: selectedExam,
+            class_number: parseInt(selectedClass),
+            locked_by: user.id,
+          });
+        if (error) throw error;
+        await supabase.from('activity_logs').insert({
+          action: 'CLASS_MARKS_LOCKED',
+          details: { exam_id: selectedExam, class_number: parseInt(selectedClass) },
+        });
+        toast({ title: "Class locked", description: `Class ${selectedClass} marks are now read-only.` });
+      }
+      fetchClassLock();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message ?? "Failed to toggle class lock" });
+    } finally {
+      setIsTogglingClassLock(false);
+    }
+  };
 
   const checkDeploymentStatus = async () => {
     const { data } = await supabase
@@ -197,7 +270,7 @@ const MarksSection = () => {
 
   // Auto-save when moving away from a cell
   const autoSaveMarks = useCallback(async () => {
-    if (!selectedExam || !selectedSubject || isLocked) return;
+    if (!selectedExam || !selectedSubject || isLocked || isClassLocked) return;
     
     // Don't save if there are validation errors
     if (hasValidationErrors()) return;
@@ -604,7 +677,7 @@ const MarksSection = () => {
             <div className="flex items-end gap-2 flex-wrap">
               <Button 
                 onClick={handleSave} 
-                disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
+                disabled={!selectedExam || !selectedSubject || isLocked || isClassLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
               >
                 <Save className="mr-2 h-4 w-4" />
                 {isSaving ? "Saving..." : "Save"}
@@ -619,7 +692,7 @@ const MarksSection = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowExcelImport(true)}
-                  disabled={isLocked || isDeploymentActive}
+                  disabled={isLocked || isClassLocked || isDeploymentActive}
                 >
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   Excel
@@ -640,6 +713,42 @@ const MarksSection = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Class-wise Lock Panel */}
+      {selectedExam && (
+        <Card className={isClassLocked ? "border-warning/60 bg-warning/5" : ""}>
+          <CardContent className="pt-6 flex flex-wrap items-center gap-3">
+            {isClassLocked ? (
+              <Lock className="h-5 w-5 text-warning shrink-0" />
+            ) : (
+              <Unlock className="h-5 w-5 text-muted-foreground shrink-0" />
+            )}
+            <div className="flex-1 min-w-[200px]">
+              <p className="font-medium">
+                Class {selectedClass} marks lock —{" "}
+                {isClassLocked ? (
+                  <span className="text-warning">LOCKED</span>
+                ) : (
+                  <span className="text-success">Editable</span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {isClassLocked
+                  ? `Locked at ${classLockInfo ? new Date(classLockInfo.locked_at).toLocaleString() : ""}. No marks for this class+exam can be edited until unlocked.`
+                  : "Lock the class once marks are finalized. Per-subject lock still works independently."}
+              </p>
+            </div>
+            <Button
+              variant={isClassLocked ? "outline" : "default"}
+              onClick={handleToggleClassLock}
+              disabled={isTogglingClassLock}
+            >
+              {isClassLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+              {isTogglingClassLock ? "Working..." : isClassLocked ? "Unlock Class" : "Lock Class"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Bulk Actions Toolbar for Marks */}
       {isSomeStudentsSelected && selectedExam && selectedSubject && (
@@ -769,7 +878,7 @@ const MarksSection = () => {
                                     onFocus={() => handleFocus(student.id, field)}
                                     onBlur={handleBlur}
                                     placeholder="—"
-                                    disabled={isLocked || !isFullMarksConfigured}
+                                    disabled={isLocked || isClassLocked || !isFullMarksConfigured}
                                   />
                                   {markErrors[student.id]?.[field] && (
                                     <span className="text-xs text-destructive mt-1">{markErrors[student.id][field]}</span>
