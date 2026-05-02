@@ -254,6 +254,19 @@ const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLoo
         )}
       </div>
 
+      <div className="space-y-2">
+        <CaptchaBox
+          ref={captchaRef}
+          onChange={(t) => {
+            setCaptchaToken(t);
+            if (t && errors.captcha) setErrors(prev => ({ ...prev, captcha: "" }));
+          }}
+        />
+        {errors.captcha && (
+          <p role="alert" className="text-sm text-destructive text-center animate-fade-in">{errors.captcha}</p>
+        )}
+      </div>
+
       {/* Loading Progress */}
       {isLoading && (
         <div className="space-y-2 animate-fade-in">
@@ -267,7 +280,7 @@ const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLoo
       <Button
         type="submit"
         className="w-full h-12 min-h-[44px] text-base font-semibold mt-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        disabled={isLoading}
+        disabled={isLoading || !captchaToken}
       >
         {isLoading ? (
           <span className="flex items-center gap-2">
