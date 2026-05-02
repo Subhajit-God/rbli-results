@@ -177,7 +177,7 @@ const Index = () => {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} />
+                  <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} resetCaptchaSignal={captchaResetSignal} />
                 </CardContent>
               </Card>
             </div>
