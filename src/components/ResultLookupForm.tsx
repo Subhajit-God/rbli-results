@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
+import type ReCAPTCHA from "react-google-recaptcha";
 import { format } from "date-fns";
 import { sanitizeStudentId, MAX_LENGTHS } from "@/lib/sanitize";
 import { CalendarIcon, Search, User, BookOpen, Loader2, HelpCircle } from "lucide-react";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Progress } from "@/components/ui/progress";
+import CaptchaBox from "@/components/CaptchaBox";
 import {
   Popover,
   PopoverContent,
@@ -28,16 +30,27 @@ import {
 } from "@/components/ui/tooltip";
 
 interface ResultLookupFormProps {
-  onSubmit: (data: { studentId: string; classNumber: string; dob: Date }) => void;
+  onSubmit: (data: { studentId: string; classNumber: string; dob: Date; captchaToken: string }) => void;
   isLoading: boolean;
+  resetCaptchaSignal?: number;
 }
 
-const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
+const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLookupFormProps) => {
   const [studentId, setStudentId] = useState("");
   const [classNumber, setClassNumber] = useState("");
   const [dob, setDob] = useState<Date>();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<ReCAPTCHA>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  useEffect(() => {
+    if (resetCaptchaSignal !== undefined) {
+      captchaRef.current?.reset();
+      setCaptchaToken(null);
+    }
+  }, [resetCaptchaSignal]);
+
 
   const lookupSchema = z.object({
     studentId: z.string()
@@ -88,10 +101,18 @@ const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const validated = validateForm();
-    if (validated) {
-      setLoadingProgress(0);
-      onSubmit({ studentId: validated.studentId, classNumber: validated.classNumber, dob: validated.dob });
+    if (!validated) return;
+    if (!captchaToken) {
+      setErrors((prev) => ({ ...prev, captcha: "Please complete the CAPTCHA" }));
+      return;
     }
+    setLoadingProgress(0);
+    onSubmit({
+      studentId: validated.studentId,
+      classNumber: validated.classNumber,
+      dob: validated.dob,
+      captchaToken,
+    });
   };
 
   return (
