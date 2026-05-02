@@ -428,7 +428,8 @@ const AdminAuth = () => {
                         <p className="text-sm text-destructive">{fieldErrors.password}</p>
                       )}
                     </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <CaptchaBox ref={loginCaptchaRef} onChange={setLoginCaptcha} />
+                    <Button type="submit" className="w-full" disabled={isLoading || !loginCaptcha}>
                       {isLoading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -526,7 +527,8 @@ const AdminAuth = () => {
                           <p className="text-sm text-destructive">{fieldErrors.confirmPassword}</p>
                         )}
                       </div>
-                      <Button type="submit" className="w-full" disabled={isLoading}>
+                      <CaptchaBox ref={registerCaptchaRef} onChange={setRegisterCaptcha} />
+                      <Button type="submit" className="w-full" disabled={isLoading || !registerCaptcha}>
                         {isLoading ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
