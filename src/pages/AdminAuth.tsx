@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAdminCheck, isCurrentUserAdmin } from "@/hooks/useAdminCheck";
 import { z } from "zod";
+import type ReCAPTCHA from "react-google-recaptcha";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,29 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, Loader2, Eye, EyeOff, ShieldAlert, ShieldCheck } from "lucide-react";
 import ResultHeader from "@/components/ResultHeader";
 import FloatingShapes from "@/components/FloatingShapes";
+import CaptchaBox from "@/components/CaptchaBox";
 import { sanitizeEmail, sanitizePassword, MAX_LENGTHS } from "@/lib/sanitize";
+
+async function verifyCaptchaServerSide(token: string, action: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-auth-captcha`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({ captchaToken: token, action }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.ok) return { ok: false, error: json.error ?? "Captcha failed" };
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Captcha verification unavailable" };
+  }
+}
 
 const loginSchema = z.object({
   email: z.string().transform(sanitizeEmail).pipe(z.string().email("Please enter a valid email address").max(254, "Email is too long")),
@@ -42,7 +65,11 @@ const AdminAuth = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+  const [loginCaptcha, setLoginCaptcha] = useState<string | null>(null);
+  const [registerCaptcha, setRegisterCaptcha] = useState<string | null>(null);
+  const loginCaptchaRef = useRef<ReCAPTCHA>(null);
+  const registerCaptchaRef = useRef<ReCAPTCHA>(null);
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
