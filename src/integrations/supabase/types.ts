@@ -59,33 +59,6 @@ export type Database = {
         }
         Relationships: []
       }
-      class_locks: {
-        Row: {
-          class_number: number
-          exam_id: string
-          id: string
-          locked_at: string
-          locked_by: string
-          note: string | null
-        }
-        Insert: {
-          class_number: number
-          exam_id: string
-          id?: string
-          locked_at?: string
-          locked_by: string
-          note?: string | null
-        }
-        Update: {
-          class_number?: number
-          exam_id?: string
-          id?: string
-          locked_at?: string
-          locked_by?: string
-          note?: string | null
-        }
-        Relationships: []
-      }
       deployment_status: {
         Row: {
           all_marks_entered: boolean
@@ -434,10 +407,6 @@ export type Database = {
     Functions: {
       admin_exists: { Args: never; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_class_locked: {
-        Args: { _class_number: number; _exam_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
       admin_role: "admin"

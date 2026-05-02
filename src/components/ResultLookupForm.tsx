@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
-import type ReCAPTCHA from "react-google-recaptcha";
 import { format } from "date-fns";
 import { sanitizeStudentId, MAX_LENGTHS } from "@/lib/sanitize";
 import { CalendarIcon, Search, User, BookOpen, Loader2, HelpCircle } from "lucide-react";
@@ -10,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { Progress } from "@/components/ui/progress";
-import CaptchaBox from "@/components/CaptchaBox";
 import {
   Popover,
   PopoverContent,
@@ -30,27 +28,16 @@ import {
 } from "@/components/ui/tooltip";
 
 interface ResultLookupFormProps {
-  onSubmit: (data: { studentId: string; classNumber: string; dob: Date; captchaToken: string }) => void;
+  onSubmit: (data: { studentId: string; classNumber: string; dob: Date }) => void;
   isLoading: boolean;
-  resetCaptchaSignal?: number;
 }
 
-const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLookupFormProps) => {
+const ResultLookupForm = ({ onSubmit, isLoading }: ResultLookupFormProps) => {
   const [studentId, setStudentId] = useState("");
   const [classNumber, setClassNumber] = useState("");
   const [dob, setDob] = useState<Date>();
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaRef = useRef<ReCAPTCHA>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
-
-  useEffect(() => {
-    if (resetCaptchaSignal !== undefined) {
-      captchaRef.current?.reset();
-      setCaptchaToken(null);
-    }
-  }, [resetCaptchaSignal]);
-
 
   const lookupSchema = z.object({
     studentId: z.string()
@@ -101,18 +88,10 @@ const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLoo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const validated = validateForm();
-    if (!validated) return;
-    if (!captchaToken) {
-      setErrors((prev) => ({ ...prev, captcha: "Please complete the CAPTCHA" }));
-      return;
+    if (validated) {
+      setLoadingProgress(0);
+      onSubmit({ studentId: validated.studentId, classNumber: validated.classNumber, dob: validated.dob });
     }
-    setLoadingProgress(0);
-    onSubmit({
-      studentId: validated.studentId,
-      classNumber: validated.classNumber,
-      dob: validated.dob,
-      captchaToken,
-    });
   };
 
   return (
@@ -254,19 +233,6 @@ const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLoo
         )}
       </div>
 
-      <div className="space-y-2">
-        <CaptchaBox
-          ref={captchaRef}
-          onChange={(t) => {
-            setCaptchaToken(t);
-            if (t && errors.captcha) setErrors(prev => ({ ...prev, captcha: "" }));
-          }}
-        />
-        {errors.captcha && (
-          <p role="alert" className="text-sm text-destructive text-center animate-fade-in">{errors.captcha}</p>
-        )}
-      </div>
-
       {/* Loading Progress */}
       {isLoading && (
         <div className="space-y-2 animate-fade-in">
@@ -280,7 +246,7 @@ const ResultLookupForm = ({ onSubmit, isLoading, resetCaptchaSignal }: ResultLoo
       <Button
         type="submit"
         className="w-full h-12 min-h-[44px] text-base font-semibold mt-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:hover:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        disabled={isLoading || !captchaToken}
+        disabled={isLoading}
       >
         {isLoading ? (
           <span className="flex items-center gap-2">

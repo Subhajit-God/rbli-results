@@ -1,7 +1,6 @@
 // Public result-lookup endpoint with IP/day rate limiting + server-side attempt logging.
 // Deployed with verify_jwt = false (public endpoint).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { verifyCaptcha } from "../_shared/captcha.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -81,27 +80,6 @@ Deno.serve(async (req: Request) => {
   if (!studentId || !classNumber || !dob) {
     return new Response(
       JSON.stringify({ error: "Invalid input. Check Student ID, class, and date of birth." }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
-  }
-
-  // --- Captcha verification (must succeed before any DB work) ---
-  const captcha = await verifyCaptcha(body?.captchaToken, ip);
-  if (!captcha.ok) {
-    // Log failed captcha as a lookup attempt for monitoring
-    await supabase.from("lookup_attempts").insert({
-      ip_address: ip,
-      student_id: studentId,
-      class_number: classNumber,
-      success: false,
-      user_agent: ua,
-    });
-    await supabase.from("activity_logs").insert({
-      action: "CAPTCHA_FAILED",
-      details: { context: "result_lookup", ip, reason: captcha.reason },
-    }).then(() => {}, () => {});
-    return new Response(
-      JSON.stringify({ error: captcha.reason ?? "Captcha failed" }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

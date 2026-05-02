@@ -23,7 +23,6 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [captchaResetSignal, setCaptchaResetSignal] = useState(0);
   const { toast } = useToast();
 
   // If URL has sid and eid, redirect to /result page
@@ -53,7 +52,7 @@ const Index = () => {
   }, []);
 
   const performLookup = async (
-    data: { studentId: string; classNumber: string; dob: Date; captchaToken: string },
+    data: { studentId: string; classNumber: string; dob: Date },
     signal: AbortSignal,
   ) => {
     setIsLoading(true);
@@ -72,7 +71,6 @@ const Index = () => {
           studentId: data.studentId,
           classNumber: data.classNumber,
           dob: format(data.dob, "yyyy-MM-dd"),
-          captchaToken: data.captchaToken,
         }),
         signal,
       });
@@ -82,12 +80,10 @@ const Index = () => {
 
       if (res.status === 429) {
         setError(json.error ?? "Too many lookup attempts. Try again tomorrow.");
-        setCaptchaResetSignal((n) => n + 1);
         return;
       }
       if (!res.ok || !json.success) {
         setError(json.error ?? "Lookup failed. Please try again.");
-        setCaptchaResetSignal((n) => n + 1);
         return;
       }
 
@@ -95,7 +91,6 @@ const Index = () => {
     } catch (err: any) {
       if (err?.name === "AbortError") return;
       console.error("Error:", err);
-      setCaptchaResetSignal((n) => n + 1);
       toast({
         variant: "destructive",
         title: "Error",
@@ -106,7 +101,7 @@ const Index = () => {
     }
   };
 
-  const handleLookup = (data: { studentId: string; classNumber: string; dob: Date; captchaToken: string }) => {
+  const handleLookup = (data: { studentId: string; classNumber: string; dob: Date }) => {
     // Debounce repeated clicks
     const now = Date.now();
     if (now - lastSubmitRef.current < LOOKUP_DEBOUNCE_MS) {
@@ -177,7 +172,7 @@ const Index = () => {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} resetCaptchaSignal={captchaResetSignal} />
+                  <ResultLookupForm onSubmit={handleLookup} isLoading={isLoading} />
                 </CardContent>
               </Card>
             </div>
