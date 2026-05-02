@@ -23,6 +23,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [captchaResetSignal, setCaptchaResetSignal] = useState(0);
   const { toast } = useToast();
 
   // If URL has sid and eid, redirect to /result page
