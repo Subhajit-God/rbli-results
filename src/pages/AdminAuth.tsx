@@ -141,6 +141,18 @@ const AdminAuth = () => {
         password: formData.password,
       });
 
+      if (!loginCaptcha) {
+        setError("Please complete the CAPTCHA");
+        return;
+      }
+      const cap = await verifyCaptchaServerSide(loginCaptcha, "admin_login");
+      if (!cap.ok) {
+        setError(cap.error ?? "Captcha failed");
+        loginCaptchaRef.current?.reset();
+        setLoginCaptcha(null);
+        return;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
         email: validatedData.email,
         password: validatedData.password,
