@@ -714,6 +714,42 @@ const MarksSection = () => {
         </CardContent>
       </Card>
 
+      {/* Class-wise Lock Panel */}
+      {selectedExam && (
+        <Card className={isClassLocked ? "border-warning/60 bg-warning/5" : ""}>
+          <CardContent className="pt-6 flex flex-wrap items-center gap-3">
+            {isClassLocked ? (
+              <Lock className="h-5 w-5 text-warning shrink-0" />
+            ) : (
+              <Unlock className="h-5 w-5 text-muted-foreground shrink-0" />
+            )}
+            <div className="flex-1 min-w-[200px]">
+              <p className="font-medium">
+                Class {selectedClass} marks lock —{" "}
+                {isClassLocked ? (
+                  <span className="text-warning">LOCKED</span>
+                ) : (
+                  <span className="text-success">Editable</span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {isClassLocked
+                  ? `Locked at ${classLockInfo ? new Date(classLockInfo.locked_at).toLocaleString() : ""}. No marks for this class+exam can be edited until unlocked.`
+                  : "Lock the class once marks are finalized. Per-subject lock still works independently."}
+              </p>
+            </div>
+            <Button
+              variant={isClassLocked ? "outline" : "default"}
+              onClick={handleToggleClassLock}
+              disabled={isTogglingClassLock}
+            >
+              {isClassLocked ? <Unlock className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+              {isTogglingClassLock ? "Working..." : isClassLocked ? "Unlock Class" : "Lock Class"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Bulk Actions Toolbar for Marks */}
       {isSomeStudentsSelected && selectedExam && selectedSubject && (
         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/60 border animate-in slide-in-from-top-2">
