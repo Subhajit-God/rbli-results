@@ -404,6 +404,12 @@ const RanksSection = () => {
                   Save Changes
                 </Button>
               )}
+              {hasConflicts && (
+                <Button onClick={autoResolveByRoll} variant="secondary">
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Auto-resolve by Roll
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -414,7 +420,9 @@ const RanksSection = () => {
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            Some students have the same total marks. Please manually assign ranks to resolve conflicts before deploying.
+            ⚠️ Some students share the same total marks. You can manually assign ranks, or click
+            <strong> Auto-resolve by Roll </strong> to break ties by ascending roll number
+            (lower roll wins). The ⚠️ flag remains so the tie is visible in the result.
           </AlertDescription>
         </Alert>
       )}
