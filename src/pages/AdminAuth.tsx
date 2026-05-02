@@ -164,6 +164,8 @@ const AdminAuth = () => {
         } else {
           setError(authError.message);
         }
+        loginCaptchaRef.current?.reset();
+        setLoginCaptcha(null);
         return;
       }
 
