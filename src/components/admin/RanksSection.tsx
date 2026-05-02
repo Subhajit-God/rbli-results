@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Save, AlertTriangle, Check, X } from "lucide-react";
+import { RefreshCw, Save, AlertTriangle, Check, X, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -275,6 +275,75 @@ const RanksSection = () => {
         variant: "destructive",
         title: "Error",
         description: error.message || "Failed to save ranks",
+      });
+    }
+  };
+
+  const autoResolveByRoll = async () => {
+    if (!ranks.length) return;
+    const conflicting = ranks.filter(r => r.has_conflict);
+    if (!conflicting.length) {
+      toast({ title: "No conflicts", description: "Nothing to auto-resolve." });
+      return;
+    }
+
+    // Group conflicting ranks by total_marks
+    const groups = new Map<number, RankData[]>();
+    conflicting.forEach(r => {
+      const arr = groups.get(r.total_marks) ?? [];
+      arr.push(r);
+      groups.set(r.total_marks, arr);
+    });
+
+    // Determine sorted roll order across the entire class to derive offsets
+    // Strategy: for each tie group, find the original block of consecutive ranks
+    // and reassign by ascending roll_number (lower roll = better rank).
+    // Build a sorted view of all ranks by current rank (ascending) to know slot positions.
+    const sortedAll = [...ranks].sort((a, b) => (a.rank ?? 9999) - (b.rank ?? 9999));
+    const updates: { id: string; rank: number }[] = [];
+
+    for (const [, group] of groups) {
+      // Find positions in sortedAll for this group
+      const positions = sortedAll
+        .map((r, i) => (group.some(g => g.id === r.id) ? i : -1))
+        .filter(i => i >= 0);
+      if (positions.length !== group.length) continue;
+
+      // The slot ranks they should occupy = positions[i] + 1
+      const slots = positions.map(p => p + 1).sort((a, b) => a - b);
+
+      // Sort group by roll number ascending (lower roll = better rank)
+      const ordered = [...group].sort(
+        (a, b) => (a.student?.roll_number ?? 9e9) - (b.student?.roll_number ?? 9e9),
+      );
+
+      ordered.forEach((r, idx) => updates.push({ id: r.id, rank: slots[idx] }));
+    }
+
+    try {
+      for (const u of updates) {
+        const { error } = await supabase
+          .from('ranks')
+          .update({ rank: u.rank, has_conflict: true }) // keep ⚠️ flag visible
+          .eq('id', u.id);
+        if (error) throw error;
+      }
+
+      await supabase.from('activity_logs').insert({
+        action: 'RANKS_AUTO_TIEBREAK',
+        details: { exam_id: selectedExam, class: selectedClass, resolved: updates.length },
+      });
+
+      toast({
+        title: "Auto-resolved",
+        description: `${updates.length} ranks adjusted by roll number. ⚠️ kept to flag the tie.`,
+      });
+      fetchRanks();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Auto-resolve failed",
       });
     }
   };
