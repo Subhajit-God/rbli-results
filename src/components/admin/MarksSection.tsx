@@ -86,7 +86,10 @@ const MarksSection = () => {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [focusedCell, setFocusedCell] = useState<{ studentId: string; field: MarkField } | null>(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
-  
+  const [isClassLocked, setIsClassLocked] = useState(false);
+  const [classLockInfo, setClassLockInfo] = useState<{ locked_at: string; note: string | null } | null>(null);
+  const [isTogglingClassLock, setIsTogglingClassLock] = useState(false);
+
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const { toast } = useToast();
 
@@ -102,6 +105,76 @@ const MarksSection = () => {
       fetchMarks();
     }
   }, [selectedExam, selectedSubject]);
+
+  useEffect(() => {
+    fetchClassLock();
+  }, [selectedExam, selectedClass]);
+
+  const fetchClassLock = async () => {
+    if (!selectedExam || !selectedClass) {
+      setIsClassLocked(false);
+      setClassLockInfo(null);
+      return;
+    }
+    const { data } = await supabase
+      .from('class_locks')
+      .select('locked_at, note')
+      .eq('exam_id', selectedExam)
+      .eq('class_number', parseInt(selectedClass))
+      .maybeSingle();
+    if (data) {
+      setIsClassLocked(true);
+      setClassLockInfo({ locked_at: data.locked_at, note: data.note });
+    } else {
+      setIsClassLocked(false);
+      setClassLockInfo(null);
+    }
+  };
+
+  const handleToggleClassLock = async () => {
+    if (!selectedExam || !selectedClass) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({ variant: "destructive", title: "Not authenticated" });
+      return;
+    }
+
+    setIsTogglingClassLock(true);
+    try {
+      if (isClassLocked) {
+        const { error } = await supabase
+          .from('class_locks')
+          .delete()
+          .eq('exam_id', selectedExam)
+          .eq('class_number', parseInt(selectedClass));
+        if (error) throw error;
+        await supabase.from('activity_logs').insert({
+          action: 'CLASS_MARKS_UNLOCKED',
+          details: { exam_id: selectedExam, class_number: parseInt(selectedClass) },
+        });
+        toast({ title: "Class unlocked", description: `Class ${selectedClass} marks can be edited again.` });
+      } else {
+        const { error } = await supabase
+          .from('class_locks')
+          .insert({
+            exam_id: selectedExam,
+            class_number: parseInt(selectedClass),
+            locked_by: user.id,
+          });
+        if (error) throw error;
+        await supabase.from('activity_logs').insert({
+          action: 'CLASS_MARKS_LOCKED',
+          details: { exam_id: selectedExam, class_number: parseInt(selectedClass) },
+        });
+        toast({ title: "Class locked", description: `Class ${selectedClass} marks are now read-only.` });
+      }
+      fetchClassLock();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message ?? "Failed to toggle class lock" });
+    } finally {
+      setIsTogglingClassLock(false);
+    }
+  };
 
   const checkDeploymentStatus = async () => {
     const { data } = await supabase
