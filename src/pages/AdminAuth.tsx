@@ -215,6 +215,18 @@ const AdminAuth = () => {
     try {
       const validatedData = registerSchema.parse(formData);
 
+      if (!registerCaptcha) {
+        setError("Please complete the CAPTCHA");
+        return;
+      }
+      const cap = await verifyCaptchaServerSide(registerCaptcha, "admin_register");
+      if (!cap.ok) {
+        setError(cap.error ?? "Captcha failed");
+        registerCaptchaRef.current?.reset();
+        setRegisterCaptcha(null);
+        return;
+      }
+
       // Final backend check before registration
       const { count } = await supabase
         .from('admin_roles')
