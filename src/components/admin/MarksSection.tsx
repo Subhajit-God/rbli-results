@@ -270,7 +270,7 @@ const MarksSection = () => {
 
   // Auto-save when moving away from a cell
   const autoSaveMarks = useCallback(async () => {
-    if (!selectedExam || !selectedSubject || isLocked) return;
+    if (!selectedExam || !selectedSubject || isLocked || isClassLocked) return;
     
     // Don't save if there are validation errors
     if (hasValidationErrors()) return;
@@ -677,7 +677,7 @@ const MarksSection = () => {
             <div className="flex items-end gap-2 flex-wrap">
               <Button 
                 onClick={handleSave} 
-                disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
+                disabled={!selectedExam || !selectedSubject || isLocked || isClassLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
               >
                 <Save className="mr-2 h-4 w-4" />
                 {isSaving ? "Saving..." : "Save"}
@@ -692,7 +692,7 @@ const MarksSection = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => setShowExcelImport(true)}
-                  disabled={isLocked || isDeploymentActive}
+                  disabled={isLocked || isClassLocked || isDeploymentActive}
                 >
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   Excel
@@ -842,7 +842,7 @@ const MarksSection = () => {
                                     onFocus={() => handleFocus(student.id, field)}
                                     onBlur={handleBlur}
                                     placeholder="—"
-                                    disabled={isLocked || !isFullMarksConfigured}
+                                    disabled={isLocked || isClassLocked || !isFullMarksConfigured}
                                   />
                                   {markErrors[student.id]?.[field] && (
                                     <span className="text-xs text-destructive mt-1">{markErrors[student.id][field]}</span>
