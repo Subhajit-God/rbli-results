@@ -19,7 +19,7 @@ export const useDeploymentStatus = () => {
   const checkDeploymentStatus = async () => {
     try {
       // Activate any scheduled releases whose time has passed
-      await supabase.rpc("activate_scheduled_releases" as any).catch(() => {});
+      try { await (supabase.rpc as any)("activate_scheduled_releases"); } catch { /* ignore */ }
       // Most recently deployed
       const { data: live } = await supabase
         .from("exams")
