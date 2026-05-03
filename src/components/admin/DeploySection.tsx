@@ -53,8 +53,45 @@ const DeploySection = () => {
   const [isRollingBack, setIsRollingBack] = useState(false);
   const [showDeployDialog, setShowDeployDialog] = useState(false);
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
-  
+  const [scheduleAt, setScheduleAt] = useState<string>("");
+  const [isScheduling, setIsScheduling] = useState(false);
+
   const { toast } = useToast();
+
+  // Sync schedule input when exam changes
+  useEffect(() => {
+    const exam = exams.find(e => e.id === selectedExam);
+    if (exam?.scheduled_release_at) {
+      // Convert to local datetime-local string
+      const d = new Date(exam.scheduled_release_at);
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      setScheduleAt(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
+    } else {
+      setScheduleAt("");
+    }
+  }, [selectedExam, exams]);
+
+  const saveSchedule = async (clear = false) => {
+    if (!selectedExam) return;
+    setIsScheduling(true);
+    try {
+      const payload = clear
+        ? { scheduled_release_at: null, auto_deploy: false }
+        : { scheduled_release_at: new Date(scheduleAt).toISOString(), auto_deploy: true };
+      const { error } = await supabase.from('exams').update(payload).eq('id', selectedExam);
+      if (error) throw error;
+      await supabase.from('activity_logs').insert({
+        action: clear ? 'DEPLOY_SCHEDULE_CLEARED' : 'DEPLOY_SCHEDULED',
+        details: { exam_id: selectedExam, scheduled_release_at: payload.scheduled_release_at },
+      });
+      toast({ title: clear ? "Schedule cleared" : "Scheduled", description: clear ? "Auto-deploy disabled" : `Will go live at ${new Date(scheduleAt).toLocaleString()}` });
+      fetchExams();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    } finally {
+      setIsScheduling(false);
+    }
+  };
 
   useEffect(() => {
     fetchExams();
