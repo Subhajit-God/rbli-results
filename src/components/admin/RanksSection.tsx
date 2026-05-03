@@ -183,33 +183,23 @@ const RanksSection = () => {
           (mark.subjects?.full_marks_3 || 0);
       });
 
-      // Build student lookup for roll-number tiebreak
-      const studentById: Record<string, any> = {};
-      students?.forEach((s: any) => { studentById[s.id] = s; });
-
-      // Sort by total marks (desc), then roll number (asc) — deterministic tie-break.
+      // Sort by total marks (descending)
       const sortedStudents = Object.entries(studentTotals)
-        .filter(([sid]) => studentById[sid])
-        .sort(([sidA, a], [sidB, b]) => {
-          if (b.total !== a.total) return b.total - a.total;
-          // Lower roll number gets the higher rank
-          return (studentById[sidA].roll_number ?? 0) - (studentById[sidB].roll_number ?? 0);
-        });
+        .sort(([, a], [, b]) => b.total - a.total);
 
-      // Detect ties (same total) — these will be auto-resolved by roll number,
-      // but we still flag them with has_conflict so the UI shows ⚠️.
+      // Detect conflicts (same total marks)
       const totalCounts: Record<number, number> = {};
       sortedStudents.forEach(([, { total }]) => {
         totalCounts[total] = (totalCounts[total] || 0) + 1;
       });
 
-      // Assign distinct sequential ranks (1..n) — guaranteed unique because of the tiebreak.
+      // Assign ranks and upsert
       const rankUpserts = sortedStudents.map(([studentId, { total, fullMarks }], index) => {
         const percentage = fullMarks > 0 ? (total / fullMarks) * 100 : 0;
         const grade = getGrade(percentage);
-        const isPassed = percentage >= 25;
-        const tieResolved = totalCounts[total] > 1;
-
+        const isPassed = percentage >= 25; // Minimum C grade
+        const hasConflict = totalCounts[total] > 1;
+        
         return {
           student_id: studentId,
           exam_id: selectedExam,
@@ -218,7 +208,7 @@ const RanksSection = () => {
           grade,
           rank: index + 1,
           is_passed: isPassed,
-          has_conflict: tieResolved,
+          has_conflict: hasConflict,
         };
       });
 
@@ -228,13 +218,7 @@ const RanksSection = () => {
 
       if (upsertError) throw upsertError;
 
-      const tieCount = rankUpserts.filter(r => r.has_conflict).length;
-      toast({
-        title: "Ranks calculated",
-        description: tieCount > 0
-          ? `${tieCount} tie(s) auto-resolved by roll number (lower roll = higher rank).`
-          : "All ranks assigned with no ties.",
-      });
+      toast({ title: "Success", description: "Ranks calculated successfully" });
       fetchRanks();
     } catch (error: any) {
       toast({
@@ -356,15 +340,12 @@ const RanksSection = () => {
         </CardContent>
       </Card>
 
-      {/* Tie-resolution notice */}
+      {/* Conflict Warning */}
       {hasConflicts && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4 text-warning" />
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>⚠️ Ties auto-resolved:</strong> Some students share the same total marks.
-            Distinct ranks have been assigned using a deterministic rule —
-            <em> the student with the lower roll number gets the higher rank</em>.
-            Affected rows are flagged with ⚠️. You may override manually if needed.
+            Some students have the same total marks. Please manually assign ranks to resolve conflicts before deploying.
           </AlertDescription>
         </Alert>
       )}
@@ -426,12 +407,8 @@ const RanksSection = () => {
                         </TableCell>
                         <TableCell className="text-center">
                           {rank.has_conflict ? (
-                            <Badge
-                              variant="outline"
-                              className="border-warning text-warning"
-                              title="Tie auto-resolved by roll number (lower roll = higher rank)"
-                            >
-                              <AlertTriangle className="mr-1 h-3 w-3" /> ⚠️ Tie auto-resolved
+                            <Badge variant="outline" className="border-warning text-warning">
+                              <AlertTriangle className="mr-1 h-3 w-3" /> Conflict
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="border-success text-success">
