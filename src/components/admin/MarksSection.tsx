@@ -648,6 +648,75 @@ const MarksSection = () => {
         </CardContent>
       </Card>
 
+      {/* Class-wise Marks Lock (server-enforced via DB trigger) */}
+      {selectedExam && (
+        <Card className={classLock.isLocked ? "border-warning/50" : "border-primary/30"}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              {classLock.isLocked ? (
+                <><ShieldCheck className="h-5 w-5 text-warning" /> Class {selectedClass} marks are LOCKED</>
+              ) : (
+                <><ShieldAlert className="h-5 w-5 text-primary" /> Class {selectedClass} marks are unlocked</>
+              )}
+            </CardTitle>
+            <CardDescription>
+              {classLock.isLocked
+                ? `Locked at ${classLock.lockInfo ? new Date(classLock.lockInfo.locked_at).toLocaleString() : ""}. The database will refuse any mark edits for this class until an admin unlocks it.`
+                : "Once finalized, lock this class to make every subject's marks immutable. The lock is enforced server-side by a database trigger — clients cannot bypass it."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {classLock.isLocked ? (
+              <div className="flex flex-wrap items-center gap-3">
+                {classLock.lockInfo?.note && (
+                  <span className="text-sm text-muted-foreground italic">"{classLock.lockInfo.note}"</span>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setLockBusy(true);
+                    const { error } = await classLock.unlock();
+                    setLockBusy(false);
+                    if (error) toast({ variant: "destructive", title: "Unlock failed", description: error.message });
+                    else toast({ title: "Class unlocked", description: `Class ${selectedClass} marks can now be edited` });
+                  }}
+                  disabled={lockBusy}
+                >
+                  <Unlock className="mr-2 h-4 w-4" /> Unlock Class {selectedClass}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex-1 min-w-[200px]">
+                  <Label className="text-xs">Lock note (optional)</Label>
+                  <Input
+                    value={lockNote}
+                    maxLength={200}
+                    placeholder="e.g. Reviewed by HM on 03-May-2026"
+                    onChange={(e) => setLockNote(e.target.value)}
+                  />
+                </div>
+                <Button
+                  onClick={async () => {
+                    setLockBusy(true);
+                    const { error } = await classLock.lock(lockNote.trim() || undefined);
+                    setLockBusy(false);
+                    if (error) toast({ variant: "destructive", title: "Lock failed", description: error.message });
+                    else {
+                      setLockNote("");
+                      toast({ title: "Class locked", description: `Class ${selectedClass} marks are now immutable` });
+                    }
+                  }}
+                  disabled={lockBusy}
+                >
+                  <Lock className="mr-2 h-4 w-4" /> Lock Class {selectedClass}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Bulk Actions Toolbar for Marks */}
       {isSomeStudentsSelected && selectedExam && selectedSubject && (
         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/60 border animate-in slide-in-from-top-2">
