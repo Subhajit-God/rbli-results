@@ -154,6 +154,25 @@ const Index = () => {
               </p>
             </div>
 
+            {/* Scheduled release countdown */}
+            {scheduledExam?.scheduled_release_at && (
+              <Card className="glass-effect neon-border overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <div className="h-1.5 cyber-gradient" />
+                <CardContent className="py-5 text-center space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Results will be released on{" "}
+                    <span className="font-semibold text-foreground">
+                      {new Date(scheduledExam.scheduled_release_at).toLocaleString()}
+                    </span>
+                  </p>
+                  <CountdownTimer
+                    target={scheduledExam.scheduled_release_at}
+                    onComplete={refetchDeploy}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
               <Card className="glass-effect neon-border overflow-hidden transition-all duration-300 hover:shadow-official animate-glow">
                 <div className="h-1.5 cyber-gradient" />
