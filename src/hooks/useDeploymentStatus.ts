@@ -4,37 +4,53 @@ import { supabase } from "@/integrations/supabase/client";
 interface DeployedExam {
   id: string;
   academic_year: string;
-  deployed_at: string;
+  deployed_at: string | null;
+  scheduled_release_at?: string | null;
+  is_deployed?: boolean;
+  name?: string;
 }
 
 export const useDeploymentStatus = () => {
   const [hasDeployedExam, setHasDeployedExam] = useState(false);
   const [deployedExam, setDeployedExam] = useState<DeployedExam | null>(null);
+  const [scheduledExam, setScheduledExam] = useState<DeployedExam | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const checkDeploymentStatus = async () => {
     try {
-      const { data, error } = await supabase
-        .from('exams')
-        .select('id, academic_year, deployed_at')
-        .eq('is_deployed', true)
-        .order('deployed_at', { ascending: false })
+      // Activate any scheduled releases whose time has passed
+      try { await (supabase.rpc as any)("activate_scheduled_releases"); } catch { /* ignore */ }
+      // Most recently deployed
+      const { data: live } = await supabase
+        .from("exams")
+        .select("id, name, academic_year, deployed_at, scheduled_release_at, is_deployed")
+        .eq("is_deployed", true)
+        .order("deployed_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking deployment status:', error);
-      }
-
-      if (data) {
+      if (live) {
         setHasDeployedExam(true);
-        setDeployedExam(data);
+        setDeployedExam(live);
       } else {
         setHasDeployedExam(false);
         setDeployedExam(null);
       }
+
+      // Upcoming scheduled (not yet live)
+      const nowIso = new Date().toISOString();
+      const { data: sched } = await supabase
+        .from("exams")
+        .select("id, name, academic_year, deployed_at, scheduled_release_at, is_deployed")
+        .eq("is_deployed", false)
+        .not("scheduled_release_at", "is", null)
+        .gt("scheduled_release_at", nowIso)
+        .order("scheduled_release_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      setScheduledExam(sched ?? null);
     } catch (error) {
-      console.error('Error checking deployment status:', error);
+      console.error("Error checking deployment status:", error);
     } finally {
       setIsLoading(false);
     }
@@ -44,10 +60,11 @@ export const useDeploymentStatus = () => {
     checkDeploymentStatus();
   }, []);
 
-  return { 
-    hasDeployedExam, 
-    deployedExam, 
-    isLoading, 
-    refetch: checkDeploymentStatus 
+  return {
+    hasDeployedExam,
+    deployedExam,
+    scheduledExam,
+    isLoading,
+    refetch: checkDeploymentStatus,
   };
 };

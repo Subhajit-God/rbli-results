@@ -13,6 +13,8 @@ import { ResultFormSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 import AIChatbot from "@/components/AIChatbot";
 import TypewriterText from "@/components/TypewriterText";
+import CountdownTimer from "@/components/CountdownTimer";
+import { useDeploymentStatus } from "@/hooks/useDeploymentStatus";
 
 const LOOKUP_DEBOUNCE_MS = 350;
 
@@ -24,6 +26,7 @@ const Index = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { scheduledExam, refetch: refetchDeploy } = useDeploymentStatus();
 
   // If URL has sid and eid, redirect to /result page
   const sidParam = searchParams.get("sid");
@@ -150,6 +153,25 @@ const Index = () => {
                 Check your Summative Evaluation results instantly
               </p>
             </div>
+
+            {/* Scheduled release countdown */}
+            {scheduledExam?.scheduled_release_at && (
+              <Card className="glass-effect neon-border overflow-hidden animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <div className="h-1.5 cyber-gradient" />
+                <CardContent className="py-5 text-center space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Results will be released on{" "}
+                    <span className="font-semibold text-foreground">
+                      {new Date(scheduledExam.scheduled_release_at).toLocaleString()}
+                    </span>
+                  </p>
+                  <CountdownTimer
+                    target={scheduledExam.scheduled_release_at}
+                    onComplete={refetchDeploy}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
               <Card className="glass-effect neon-border overflow-hidden transition-all duration-300 hover:shadow-official animate-glow">

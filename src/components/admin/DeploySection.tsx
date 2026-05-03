@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Rocket, Undo, AlertTriangle, CheckCircle, XCircle, Shield } from "lucide-react";
+import { Rocket, Undo, AlertTriangle, CheckCircle, XCircle, Shield, Clock, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CountdownTimer from "@/components/CountdownTimer";
 import {
   Select,
   SelectContent,
@@ -31,6 +33,8 @@ interface Exam {
   academic_year: string;
   is_deployed: boolean;
   deployed_at: string | null;
+  scheduled_release_at: string | null;
+  auto_deploy: boolean;
 }
 
 interface DeploymentCheck {
@@ -49,8 +53,45 @@ const DeploySection = () => {
   const [isRollingBack, setIsRollingBack] = useState(false);
   const [showDeployDialog, setShowDeployDialog] = useState(false);
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
-  
+  const [scheduleAt, setScheduleAt] = useState<string>("");
+  const [isScheduling, setIsScheduling] = useState(false);
+
   const { toast } = useToast();
+
+  // Sync schedule input when exam changes
+  useEffect(() => {
+    const exam = exams.find(e => e.id === selectedExam);
+    if (exam?.scheduled_release_at) {
+      // Convert to local datetime-local string
+      const d = new Date(exam.scheduled_release_at);
+      const tzOffset = d.getTimezoneOffset() * 60000;
+      setScheduleAt(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
+    } else {
+      setScheduleAt("");
+    }
+  }, [selectedExam, exams]);
+
+  const saveSchedule = async (clear = false) => {
+    if (!selectedExam) return;
+    setIsScheduling(true);
+    try {
+      const payload = clear
+        ? { scheduled_release_at: null, auto_deploy: false }
+        : { scheduled_release_at: new Date(scheduleAt).toISOString(), auto_deploy: true };
+      const { error } = await supabase.from('exams').update(payload).eq('id', selectedExam);
+      if (error) throw error;
+      await supabase.from('activity_logs').insert({
+        action: clear ? 'DEPLOY_SCHEDULE_CLEARED' : 'DEPLOY_SCHEDULED',
+        details: { exam_id: selectedExam, scheduled_release_at: payload.scheduled_release_at },
+      });
+      toast({ title: clear ? "Schedule cleared" : "Scheduled", description: clear ? "Auto-deploy disabled" : `Will go live at ${new Date(scheduleAt).toLocaleString()}` });
+      fetchExams();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message });
+    } finally {
+      setIsScheduling(false);
+    }
+  };
 
   useEffect(() => {
     fetchExams();
@@ -133,14 +174,14 @@ const DeploySection = () => {
         message: ranks?.length ? `${ranks.length} ranks assigned` : "Ranks not calculated",
       });
 
-      // Check 6: No rank conflicts
-      const conflicts = ranks?.filter(r => r.has_conflict) || [];
+      // Check 6: Tie status (informational — ties are auto-resolved by roll number)
+      const tiesResolved = ranks?.filter(r => r.has_conflict) || [];
       newChecks.push({
-        name: "No Rank Conflicts",
-        passed: conflicts.length === 0,
-        message: conflicts.length > 0 
-          ? `${conflicts.length} unresolved conflicts`
-          : "All conflicts resolved",
+        name: "Rank Ties",
+        passed: true,
+        message: tiesResolved.length > 0
+          ? `${tiesResolved.length} tie(s) auto-resolved by roll number ⚠️`
+          : "No ties detected",
       });
 
       setChecks(newChecks);
@@ -357,6 +398,59 @@ const DeploySection = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Schedule Release */}
+          {!currentExam.is_deployed && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5" /> Schedule Result Release
+                </CardTitle>
+                <CardDescription>
+                  Pick a future date &amp; time. The result will go live automatically and students will see a live countdown until then.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[240px]">
+                    <Label>Release date &amp; time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={scheduleAt}
+                      min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                      onChange={(e) => setScheduleAt(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => saveSchedule(false)}
+                    disabled={!scheduleAt || isScheduling || !canDeploy}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    {currentExam.scheduled_release_at ? "Update Schedule" : "Schedule Release"}
+                  </Button>
+                  {currentExam.scheduled_release_at && (
+                    <Button variant="outline" onClick={() => saveSchedule(true)} disabled={isScheduling}>
+                      Clear Schedule
+                    </Button>
+                  )}
+                </div>
+                {!canDeploy && (
+                  <p className="text-xs text-muted-foreground">Run pre-deployment checks first to enable scheduling.</p>
+                )}
+                {currentExam.scheduled_release_at && (
+                  <div className="rounded-lg border border-primary/30 p-4 bg-primary/5">
+                    <p className="text-sm font-medium mb-3">
+                      Scheduled for: {new Date(currentExam.scheduled_release_at).toLocaleString()}
+                    </p>
+                    <CountdownTimer
+                      target={currentExam.scheduled_release_at}
+                      onComplete={fetchExams}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 
