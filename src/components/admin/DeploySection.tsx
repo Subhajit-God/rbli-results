@@ -398,6 +398,59 @@ const DeploySection = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Schedule Release */}
+          {!currentExam.is_deployed && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarClock className="h-5 w-5" /> Schedule Result Release
+                </CardTitle>
+                <CardDescription>
+                  Pick a future date &amp; time. The result will go live automatically and students will see a live countdown until then.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex-1 min-w-[240px]">
+                    <Label>Release date &amp; time</Label>
+                    <Input
+                      type="datetime-local"
+                      value={scheduleAt}
+                      min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                      onChange={(e) => setScheduleAt(e.target.value)}
+                    />
+                  </div>
+                  <Button
+                    onClick={() => saveSchedule(false)}
+                    disabled={!scheduleAt || isScheduling || !canDeploy}
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    {currentExam.scheduled_release_at ? "Update Schedule" : "Schedule Release"}
+                  </Button>
+                  {currentExam.scheduled_release_at && (
+                    <Button variant="outline" onClick={() => saveSchedule(true)} disabled={isScheduling}>
+                      Clear Schedule
+                    </Button>
+                  )}
+                </div>
+                {!canDeploy && (
+                  <p className="text-xs text-muted-foreground">Run pre-deployment checks first to enable scheduling.</p>
+                )}
+                {currentExam.scheduled_release_at && (
+                  <div className="rounded-lg border border-primary/30 p-4 bg-primary/5">
+                    <p className="text-sm font-medium mb-3">
+                      Scheduled for: {new Date(currentExam.scheduled_release_at).toLocaleString()}
+                    </p>
+                    <CountdownTimer
+                      target={currentExam.scheduled_release_at}
+                      onComplete={fetchExams}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </>
       )}
 
