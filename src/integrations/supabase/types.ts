@@ -59,6 +59,33 @@ export type Database = {
         }
         Relationships: []
       }
+      class_locks: {
+        Row: {
+          class_number: number
+          exam_id: string
+          id: string
+          locked_at: string
+          locked_by: string
+          note: string | null
+        }
+        Insert: {
+          class_number: number
+          exam_id: string
+          id?: string
+          locked_at?: string
+          locked_by: string
+          note?: string | null
+        }
+        Update: {
+          class_number?: number
+          exam_id?: string
+          id?: string
+          locked_at?: string
+          locked_by?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       deployment_status: {
         Row: {
           all_marks_entered: boolean
@@ -106,32 +133,38 @@ export type Database = {
       exams: {
         Row: {
           academic_year: string
+          auto_deploy: boolean
           created_at: string
           deployed_at: string | null
           id: string
           is_current: boolean
           is_deployed: boolean
           name: string
+          scheduled_release_at: string | null
           updated_at: string
         }
         Insert: {
           academic_year: string
+          auto_deploy?: boolean
           created_at?: string
           deployed_at?: string | null
           id?: string
           is_current?: boolean
           is_deployed?: boolean
           name: string
+          scheduled_release_at?: string | null
           updated_at?: string
         }
         Update: {
           academic_year?: string
+          auto_deploy?: boolean
           created_at?: string
           deployed_at?: string | null
           id?: string
           is_current?: boolean
           is_deployed?: boolean
           name?: string
+          scheduled_release_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -405,8 +438,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_scheduled_releases: { Args: never; Returns: number }
       admin_exists: { Args: never; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_class_locked: {
+        Args: { _class_number: number; _exam_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       admin_role: "admin"

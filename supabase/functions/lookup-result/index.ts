@@ -104,6 +104,9 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // --- Activate any scheduled releases whose time has passed (no-op if none) ---
+  await supabase.rpc("activate_scheduled_releases").catch(() => {});
+
   // --- Look up student ---
   const { data: students, error: studentError } = await supabase
     .from("students")
