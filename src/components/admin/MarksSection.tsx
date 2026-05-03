@@ -28,6 +28,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import MarksExcelImport from "./MarksExcelImport";
 import BulkMarksExcelImport from "./BulkMarksExcelImport";
 import { isAbsent, isExempt } from "@/components/AbsentBadge";
+import { useClassLock } from "@/hooks/useClassLock";
+import { ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface Exam {
   id: string;
