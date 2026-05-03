@@ -356,12 +356,15 @@ const RanksSection = () => {
         </CardContent>
       </Card>
 
-      {/* Conflict Warning */}
+      {/* Tie-resolution notice */}
       {hasConflicts && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
+        <Alert>
+          <AlertTriangle className="h-4 w-4 text-warning" />
           <AlertDescription>
-            Some students have the same total marks. Please manually assign ranks to resolve conflicts before deploying.
+            <strong>⚠️ Ties auto-resolved:</strong> Some students share the same total marks.
+            Distinct ranks have been assigned using a deterministic rule —
+            <em> the student with the lower roll number gets the higher rank</em>.
+            Affected rows are flagged with ⚠️. You may override manually if needed.
           </AlertDescription>
         </Alert>
       )}
