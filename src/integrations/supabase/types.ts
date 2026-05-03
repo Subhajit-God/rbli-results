@@ -133,32 +133,38 @@ export type Database = {
       exams: {
         Row: {
           academic_year: string
+          auto_deploy: boolean
           created_at: string
           deployed_at: string | null
           id: string
           is_current: boolean
           is_deployed: boolean
           name: string
+          scheduled_release_at: string | null
           updated_at: string
         }
         Insert: {
           academic_year: string
+          auto_deploy?: boolean
           created_at?: string
           deployed_at?: string | null
           id?: string
           is_current?: boolean
           is_deployed?: boolean
           name: string
+          scheduled_release_at?: string | null
           updated_at?: string
         }
         Update: {
           academic_year?: string
+          auto_deploy?: boolean
           created_at?: string
           deployed_at?: string | null
           id?: string
           is_current?: boolean
           is_deployed?: boolean
           name?: string
+          scheduled_release_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -432,6 +438,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_scheduled_releases: { Args: never; Returns: number }
       admin_exists: { Args: never; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_class_locked: {
