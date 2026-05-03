@@ -611,7 +611,7 @@ const MarksSection = () => {
             <div className="flex items-end gap-2 flex-wrap">
               <Button 
                 onClick={handleSave} 
-                disabled={!selectedExam || !selectedSubject || isLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
+                disabled={!selectedExam || !selectedSubject || isLocked || classLock.isLocked || isSaving || hasValidationErrors() || !isFullMarksConfigured}
               >
                 <Save className="mr-2 h-4 w-4" />
                 {isSaving ? "Saving..." : "Save"}
