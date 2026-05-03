@@ -776,7 +776,7 @@ const MarksSection = () => {
                                     onFocus={() => handleFocus(student.id, field)}
                                     onBlur={handleBlur}
                                     placeholder="—"
-                                    disabled={isLocked || !isFullMarksConfigured}
+                                    disabled={isLocked || classLock.isLocked || !isFullMarksConfigured}
                                   />
                                   {markErrors[student.id]?.[field] && (
                                     <span className="text-xs text-destructive mt-1">{markErrors[student.id][field]}</span>
