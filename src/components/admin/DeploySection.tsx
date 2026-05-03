@@ -33,6 +33,8 @@ interface Exam {
   academic_year: string;
   is_deployed: boolean;
   deployed_at: string | null;
+  scheduled_release_at: string | null;
+  auto_deploy: boolean;
 }
 
 interface DeploymentCheck {
