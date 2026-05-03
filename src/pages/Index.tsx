@@ -26,6 +26,7 @@ const Index = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { scheduledExam, refetch: refetchDeploy } = useDeploymentStatus();
 
   // If URL has sid and eid, redirect to /result page
   const sidParam = searchParams.get("sid");
