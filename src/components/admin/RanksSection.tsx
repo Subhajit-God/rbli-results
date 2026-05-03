@@ -426,8 +426,12 @@ const RanksSection = () => {
                         </TableCell>
                         <TableCell className="text-center">
                           {rank.has_conflict ? (
-                            <Badge variant="outline" className="border-warning text-warning">
-                              <AlertTriangle className="mr-1 h-3 w-3" /> Conflict
+                            <Badge
+                              variant="outline"
+                              className="border-warning text-warning"
+                              title="Tie auto-resolved by roll number (lower roll = higher rank)"
+                            >
+                              <AlertTriangle className="mr-1 h-3 w-3" /> ⚠️ Tie auto-resolved
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="border-success text-success">
