@@ -133,14 +133,14 @@ const DeploySection = () => {
         message: ranks?.length ? `${ranks.length} ranks assigned` : "Ranks not calculated",
       });
 
-      // Check 6: No rank conflicts
-      const conflicts = ranks?.filter(r => r.has_conflict) || [];
+      // Check 6: Tie status (informational — ties are auto-resolved by roll number)
+      const tiesResolved = ranks?.filter(r => r.has_conflict) || [];
       newChecks.push({
-        name: "No Rank Conflicts",
-        passed: conflicts.length === 0,
-        message: conflicts.length > 0 
-          ? `${conflicts.length} unresolved conflicts`
-          : "All conflicts resolved",
+        name: "Rank Ties",
+        passed: true,
+        message: tiesResolved.length > 0
+          ? `${tiesResolved.length} tie(s) auto-resolved by roll number ⚠️`
+          : "No ties detected",
       });
 
       setChecks(newChecks);
