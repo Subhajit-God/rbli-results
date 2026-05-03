@@ -13,6 +13,8 @@ import { ResultFormSkeleton } from "@/components/ui/result-skeleton";
 import FloatingShapes from "@/components/FloatingShapes";
 import AIChatbot from "@/components/AIChatbot";
 import TypewriterText from "@/components/TypewriterText";
+import CountdownTimer from "@/components/CountdownTimer";
+import { useDeploymentStatus } from "@/hooks/useDeploymentStatus";
 
 const LOOKUP_DEBOUNCE_MS = 350;
 
