@@ -183,23 +183,33 @@ const RanksSection = () => {
           (mark.subjects?.full_marks_3 || 0);
       });
 
-      // Sort by total marks (descending)
-      const sortedStudents = Object.entries(studentTotals)
-        .sort(([, a], [, b]) => b.total - a.total);
+      // Build student lookup for roll-number tiebreak
+      const studentById: Record<string, any> = {};
+      students?.forEach((s: any) => { studentById[s.id] = s; });
 
-      // Detect conflicts (same total marks)
+      // Sort by total marks (desc), then roll number (asc) — deterministic tie-break.
+      const sortedStudents = Object.entries(studentTotals)
+        .filter(([sid]) => studentById[sid])
+        .sort(([sidA, a], [sidB, b]) => {
+          if (b.total !== a.total) return b.total - a.total;
+          // Lower roll number gets the higher rank
+          return (studentById[sidA].roll_number ?? 0) - (studentById[sidB].roll_number ?? 0);
+        });
+
+      // Detect ties (same total) — these will be auto-resolved by roll number,
+      // but we still flag them with has_conflict so the UI shows ⚠️.
       const totalCounts: Record<number, number> = {};
       sortedStudents.forEach(([, { total }]) => {
         totalCounts[total] = (totalCounts[total] || 0) + 1;
       });
 
-      // Assign ranks and upsert
+      // Assign distinct sequential ranks (1..n) — guaranteed unique because of the tiebreak.
       const rankUpserts = sortedStudents.map(([studentId, { total, fullMarks }], index) => {
         const percentage = fullMarks > 0 ? (total / fullMarks) * 100 : 0;
         const grade = getGrade(percentage);
-        const isPassed = percentage >= 25; // Minimum C grade
-        const hasConflict = totalCounts[total] > 1;
-        
+        const isPassed = percentage >= 25;
+        const tieResolved = totalCounts[total] > 1;
+
         return {
           student_id: studentId,
           exam_id: selectedExam,
@@ -208,7 +218,7 @@ const RanksSection = () => {
           grade,
           rank: index + 1,
           is_passed: isPassed,
-          has_conflict: hasConflict,
+          has_conflict: tieResolved,
         };
       });
 
@@ -218,7 +228,13 @@ const RanksSection = () => {
 
       if (upsertError) throw upsertError;
 
-      toast({ title: "Success", description: "Ranks calculated successfully" });
+      const tieCount = rankUpserts.filter(r => r.has_conflict).length;
+      toast({
+        title: "Ranks calculated",
+        description: tieCount > 0
+          ? `${tieCount} tie(s) auto-resolved by roll number (lower roll = higher rank).`
+          : "All ranks assigned with no ties.",
+      });
       fetchRanks();
     } catch (error: any) {
       toast({
