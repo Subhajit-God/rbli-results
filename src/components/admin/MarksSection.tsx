@@ -92,6 +92,11 @@ const MarksSection = () => {
   const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
   const { toast } = useToast();
 
+  const classNum = parseInt(selectedClass) || null;
+  const classLock = useClassLock(classNum, selectedExam || null);
+  const [lockNote, setLockNote] = useState("");
+  const [lockBusy, setLockBusy] = useState(false);
+
   useEffect(() => {
     fetchExams();
     fetchSubjects();
