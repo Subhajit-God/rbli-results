@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import RanksManualExcelImport from "./RanksManualExcelImport";
 
 interface Exam {
   id: string;
@@ -355,6 +356,15 @@ const RanksSection = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Manual Rank Excel Import (all classes in one file) */}
+      {selectedExam && (
+        <RanksManualExcelImport
+          examId={selectedExam}
+          examName={exams.find(e => e.id === selectedExam)?.name}
+          onImported={fetchRanks}
+        />
+      )}
 
       {/* Tie-resolution notice */}
       {hasConflicts && (

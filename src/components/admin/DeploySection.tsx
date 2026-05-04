@@ -152,14 +152,35 @@ const DeploySection = () => {
         message: marks?.length ? `${marks.length} mark entries found` : "No marks entered",
       });
 
-      // Check 4: All marks locked
-      const unlockedMarks = marks?.filter(m => !m.is_locked) || [];
+      // Check 4: All marks locked — either per-row is_locked OR the whole class is locked via class_locks
+      const { data: classLocks } = await supabase
+        .from('class_locks')
+        .select('class_number')
+        .eq('exam_id', selectedExam);
+      const lockedClasses = new Set((classLocks || []).map((l: any) => l.class_number));
+
+      // Get class number for each mark via the student
+      const studentIds = Array.from(new Set((marks || []).map((m: any) => m.student_id)));
+      const { data: studentRows } = studentIds.length
+        ? await supabase.from('students').select('id, class_number').in('id', studentIds)
+        : { data: [] as any[] };
+      const studentClass: Record<string, number> = {};
+      (studentRows || []).forEach((s: any) => { studentClass[s.id] = s.class_number; });
+
+      const unlockedMarks = (marks || []).filter((m: any) => {
+        if (m.is_locked) return false;
+        const cls = studentClass[m.student_id];
+        return !(cls && lockedClasses.has(cls));
+      });
+      const allLockedViaClass = (marks?.length || 0) > 0 && unlockedMarks.length === 0 && lockedClasses.size > 0;
       newChecks.push({
         name: "Marks Locked",
         passed: unlockedMarks.length === 0 && (marks?.length || 0) > 0,
-        message: unlockedMarks.length > 0 
+        message: unlockedMarks.length > 0
           ? `${unlockedMarks.length} entries still unlocked`
-          : "All marks are locked",
+          : allLockedViaClass
+            ? `All marks locked (${lockedClasses.size} class lock${lockedClasses.size > 1 ? 's' : ''} active)`
+            : "All marks are locked",
       });
 
       // Check 5: Ranks calculated
