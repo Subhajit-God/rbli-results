@@ -460,7 +460,7 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Academic Year</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Academic Year</h2>
           <p className="text-muted-foreground">Create and manage academic year evaluations</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
