@@ -180,7 +180,7 @@ const Result = () => {
         <ThemeToggle />
       </div>
 
-      <main className="flex-1 container mx-auto px-4 py-10 print:hidden relative z-10">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-10 pb-32 md:pb-16 print:hidden relative z-10">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <Link
