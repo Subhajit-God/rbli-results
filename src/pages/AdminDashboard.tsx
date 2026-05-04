@@ -281,7 +281,7 @@ const AdminDashboard = () => {
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
-              <h2 className="text-2xl font-bold text-foreground text-glow">Dashboard Overview</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground text-glow">Dashboard Overview</h2>
               <p className="text-muted-foreground">Manage your school's examination system</p>
             </div>
 
