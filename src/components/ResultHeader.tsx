@@ -7,7 +7,7 @@ interface ResultHeaderProps {
 
 const ResultHeader = ({ examName }: ResultHeaderProps) => {
   return (
-    <header className="header-gradient text-primary-foreground py-8 px-4 shadow-official relative overflow-hidden print:py-4">
+    <header className="header-gradient text-primary-foreground py-6 px-4 sm:py-8 shadow-official relative overflow-hidden print:py-4">
       {/* Decorative elements */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-64 h-64 bg-secondary rounded-full -translate-x-1/2 -translate-y-1/2 animate-pulse-subtle blur-xl" />
