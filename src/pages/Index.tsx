@@ -137,7 +137,7 @@ const Index = () => {
         <ThemeToggle />
       </div>
 
-      <main id="main-content" className="flex-1 container mx-auto px-4 py-10 md:py-16 print:hidden relative z-10" role="main">
+      <main id="main-content" className="flex-1 container mx-auto px-4 py-10 md:py-16 pb-32 md:pb-16 print:hidden relative z-10" role="main">
         {isInitialLoading ? (
           <div className="max-w-md mx-auto animate-fade-in">
             <ResultFormSkeleton />
