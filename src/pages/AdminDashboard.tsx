@@ -587,17 +587,17 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 glass-nav px-4 py-3">
-          <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-30 glass-nav px-3 sm:px-4 py-2.5 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden flex-shrink-0"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 overflow-hidden">
               {/* Breadcrumb */}
               <Breadcrumb 
                 items={[
@@ -606,11 +606,13 @@ const AdminDashboard = () => {
                 ]}
               />
             </div>
-            <NotificationsCenter />
-            <ThemeToggle />
-            <Badge variant="outline" className="text-xs hidden sm:flex">
-              Admin
-            </Badge>
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <NotificationsCenter />
+              <ThemeToggle />
+              <Badge variant="outline" className="text-xs hidden sm:flex">
+                Admin
+              </Badge>
+            </div>
           </div>
         </header>
 
