@@ -82,7 +82,7 @@ const AIChatbot = ({ studentData }: AIChatbotProps) => {
       {/* Chat Toggle Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg transition-all duration-300 ${
+        className={`fixed bottom-20 right-3 sm:right-4 z-50 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg transition-all duration-300 ${
           isOpen ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90 animate-pulse'
         }`}
         size="icon"
