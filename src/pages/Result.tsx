@@ -221,13 +221,14 @@ const Result = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-4 left-4 print:hidden z-50">
+      <div className="fixed bottom-3 left-3 sm:bottom-4 sm:left-4 print:hidden z-50">
         <Link
           to="/admin/auth"
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 glass-effect px-4 py-2.5 rounded-full border border-primary/30 shadow-md hover:neon-glow hover:border-primary/50 hover:scale-105"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 glass-effect px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border border-primary/30 shadow-md hover:neon-glow hover:border-primary/50 hover:scale-105"
         >
           <Shield className="h-3.5 w-3.5" />
-          Admin Login
+          <span className="hidden sm:inline">Admin Login</span>
+          <span className="sm:hidden">Admin</span>
         </Link>
       </div>
 
