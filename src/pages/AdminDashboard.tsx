@@ -617,7 +617,7 @@ const AdminDashboard = () => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 p-4 md:p-6 overflow-auto relative">
+        <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto relative">
           {/* Current Academic Year Banner - shown on all sections except exams */}
           {activeSection !== "exams" && (
             <div className="mb-4">
