@@ -357,6 +357,15 @@ const RanksSection = () => {
         </CardContent>
       </Card>
 
+      {/* Manual Rank Excel Import (all classes in one file) */}
+      {selectedExam && (
+        <RanksManualExcelImport
+          examId={selectedExam}
+          examName={exams.find(e => e.id === selectedExam)?.name}
+          onImported={fetchRanks}
+        />
+      )}
+
       {/* Tie-resolution notice */}
       {hasConflicts && (
         <Alert>
