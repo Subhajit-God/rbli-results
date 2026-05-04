@@ -301,7 +301,7 @@ const RanksSection = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Ranks Management</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">Ranks Management</h2>
         <p className="text-muted-foreground">Calculate and finalize student ranks</p>
       </div>
 

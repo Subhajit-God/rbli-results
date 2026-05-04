@@ -7,7 +7,7 @@ interface ResultHeaderProps {
 
 const ResultHeader = ({ examName }: ResultHeaderProps) => {
   return (
-    <header className="header-gradient text-primary-foreground py-8 px-4 shadow-official relative overflow-hidden print:py-4">
+    <header className="header-gradient text-primary-foreground py-6 px-4 sm:py-8 shadow-official relative overflow-hidden print:py-4">
       {/* Decorative elements */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 left-0 w-64 h-64 bg-secondary rounded-full -translate-x-1/2 -translate-y-1/2 animate-pulse-subtle blur-xl" />
@@ -16,13 +16,13 @@ const ResultHeader = ({ examName }: ResultHeaderProps) => {
       </div>
       
       <div className="container mx-auto flex flex-col items-center gap-4 relative z-10">
-        <div className="flex items-center gap-4 md:gap-6">
-          <div className="relative group">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 md:gap-6 pr-12 sm:pr-0">
+          <div className="relative group flex-shrink-0">
             <div className="absolute inset-0 bg-accent/30 rounded-full blur-lg group-hover:bg-accent/50 transition-all duration-300" />
             <img 
               src={schoolLogo} 
               alt="Ramjibanpur Babulal Institution Logo" 
-              className="w-18 h-18 md:w-24 md:h-24 rounded-full border-3 border-primary-foreground/60 bg-primary/20 relative z-10 shadow-lg transition-transform duration-300 group-hover:scale-105"
+              className="w-16 h-16 sm:w-18 sm:h-18 md:w-24 md:h-24 rounded-full border-3 border-primary-foreground/60 bg-primary/20 relative z-10 shadow-lg transition-transform duration-300 group-hover:scale-105"
             />
           </div>
           <div className="text-center">

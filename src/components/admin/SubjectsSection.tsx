@@ -462,7 +462,7 @@ const SubjectsSection = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Subjects</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Subjects</h2>
           <p className="text-muted-foreground">Configure subjects and full marks for each class</p>
         </div>
         <div className="flex gap-2 flex-wrap">

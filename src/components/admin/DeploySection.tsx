@@ -289,7 +289,7 @@ const DeploySection = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Deploy Results</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">Deploy Results</h2>
         <p className="text-muted-foreground">Publish or rollback examination results</p>
       </div>
 

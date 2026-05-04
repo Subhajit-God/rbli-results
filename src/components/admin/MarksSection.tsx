@@ -534,7 +534,7 @@ const MarksSection = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold">Marks Entry</h2>
+        <h2 className="text-xl sm:text-2xl font-bold">Marks Entry</h2>
         <p className="text-muted-foreground">Enter marks for students subject-wise (Summative Evaluation)</p>
       </div>
 

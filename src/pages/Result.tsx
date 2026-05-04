@@ -176,11 +176,11 @@ const Result = () => {
         <ResultHeader />
       </header>
 
-      <div className="fixed top-4 right-4 z-50 print:hidden">
+      <div className="fixed top-3 right-3 sm:top-4 sm:right-4 z-50 print:hidden">
         <ThemeToggle />
       </div>
 
-      <main className="flex-1 container mx-auto px-4 py-10 print:hidden relative z-10">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-6 sm:py-10 pb-32 md:pb-16 print:hidden relative z-10">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <Link
@@ -221,13 +221,14 @@ const Result = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-4 left-4 print:hidden z-50">
+      <div className="fixed bottom-3 left-3 sm:bottom-4 sm:left-4 print:hidden z-50">
         <Link
           to="/admin/auth"
-          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 glass-effect px-4 py-2.5 rounded-full border border-primary/30 shadow-md hover:neon-glow hover:border-primary/50 hover:scale-105"
+          className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-all duration-200 glass-effect px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border border-primary/30 shadow-md hover:neon-glow hover:border-primary/50 hover:scale-105"
         >
           <Shield className="h-3.5 w-3.5" />
-          Admin Login
+          <span className="hidden sm:inline">Admin Login</span>
+          <span className="sm:hidden">Admin</span>
         </Link>
       </div>
 

@@ -82,7 +82,7 @@ const AIChatbot = ({ studentData }: AIChatbotProps) => {
       {/* Chat Toggle Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg transition-all duration-300 ${
+        className={`fixed bottom-20 right-3 sm:right-4 z-50 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg transition-all duration-300 ${
           isOpen ? 'bg-destructive hover:bg-destructive/90' : 'bg-primary hover:bg-primary/90 animate-pulse'
         }`}
         size="icon"
@@ -97,7 +97,7 @@ const AIChatbot = ({ studentData }: AIChatbotProps) => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-36 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-background shadow-2xl animate-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-36 right-3 left-3 sm:left-auto sm:right-4 z-50 sm:w-[360px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-border bg-background shadow-2xl animate-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="flex items-center justify-between rounded-t-2xl bg-primary px-4 py-3">
             <div className="flex items-center gap-2">
