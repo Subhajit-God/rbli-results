@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import RanksManualExcelImport from "./RanksManualExcelImport";
 
 interface Exam {
   id: string;
