@@ -783,8 +783,8 @@ const MarksSection = () => {
                 </AlertDescription>
               </Alert>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+                <Table className="min-w-[720px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-10">

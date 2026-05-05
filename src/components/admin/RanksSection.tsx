@@ -396,64 +396,117 @@ const RanksSection = () => {
                 No rank data available. Calculate ranks first.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-24">Rank</TableHead>
-                      <TableHead>Roll</TableHead>
-                      <TableHead>Student Name</TableHead>
-                      <TableHead className="text-center">Total Marks</TableHead>
-                      <TableHead className="text-center">Percentage</TableHead>
-                      <TableHead className="text-center">Grade</TableHead>
-                      <TableHead className="text-center">Result</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedRanks.map((rank) => (
-                      <TableRow key={rank.id} className={rank.has_conflict ? "bg-warning/10" : ""}>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min="1"
-                            className="w-16 text-center"
-                            value={editedRanks[rank.id] || rank.rank || ''}
-                            onChange={(e) => handleRankChange(rank.id, e.target.value)}
-                          />
-                        </TableCell>
-                        <TableCell>{rank.student?.roll_number}</TableCell>
-                        <TableCell className="font-medium">{rank.student?.name}</TableCell>
-                        <TableCell className="text-center font-semibold">{rank.total_marks}</TableCell>
-                        <TableCell className="text-center">{rank.percentage.toFixed(2)}%</TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="outline">{rank.grade}</Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge className={rank.is_passed ? "bg-success" : "bg-destructive"}>
-                            {rank.is_passed ? "PASS" : "FAIL"}
+              <>
+                {/* Mobile stacked cards */}
+                <div className="md:hidden space-y-3">
+                  {sortedRanks.map((rank) => (
+                    <div
+                      key={rank.id}
+                      className={`rounded-xl border p-4 transition-all ${
+                        rank.has_conflict ? "bg-warning/10 border-warning/40" : "bg-card border-border"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs text-muted-foreground">Rank</span>
+                            <Input
+                              type="number"
+                              min="1"
+                              className="h-8 w-16 text-center text-sm"
+                              value={editedRanks[rank.id] || rank.rank || ""}
+                              onChange={(e) => handleRankChange(rank.id, e.target.value)}
+                            />
+                          </div>
+                          <p className="font-semibold text-foreground truncate">{rank.student?.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Roll {rank.student?.roll_number} • ID {rank.student?.student_id}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-lg font-bold text-primary">{rank.percentage.toFixed(1)}%</p>
+                          <p className="text-xs text-muted-foreground">{rank.total_marks} marks</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{rank.grade}</Badge>
+                        <Badge className={rank.is_passed ? "bg-success" : "bg-destructive"}>
+                          {rank.is_passed ? "PASS" : "FAIL"}
+                        </Badge>
+                        {rank.has_conflict ? (
+                          <Badge variant="outline" className="border-warning text-warning text-[10px]">
+                            <AlertTriangle className="mr-1 h-3 w-3" /> Tie auto-resolved
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {rank.has_conflict ? (
-                            <Badge
-                              variant="outline"
-                              className="border-warning text-warning"
-                              title="Tie auto-resolved by roll number (lower roll = higher rank)"
-                            >
-                              <AlertTriangle className="mr-1 h-3 w-3" /> ⚠️ Tie auto-resolved
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-success text-success">
-                              <Check className="mr-1 h-3 w-3" /> OK
-                            </Badge>
-                          )}
-                        </TableCell>
+                        ) : (
+                          <Badge variant="outline" className="border-success text-success text-[10px]">
+                            <Check className="mr-1 h-3 w-3" /> OK
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop table with sticky header */}
+                <div className="hidden md:block overflow-x-auto rounded-lg border border-border max-h-[70vh]">
+                  <Table className="min-w-[760px]">
+                    <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
+                      <TableRow>
+                        <TableHead className="w-24">Rank</TableHead>
+                        <TableHead>Roll</TableHead>
+                        <TableHead>Student Name</TableHead>
+                        <TableHead className="text-center">Total Marks</TableHead>
+                        <TableHead className="text-center">Percentage</TableHead>
+                        <TableHead className="text-center">Grade</TableHead>
+                        <TableHead className="text-center">Result</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedRanks.map((rank) => (
+                        <TableRow key={rank.id} className={rank.has_conflict ? "bg-warning/10" : ""}>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="1"
+                              className="w-16 text-center"
+                              value={editedRanks[rank.id] || rank.rank || ''}
+                              onChange={(e) => handleRankChange(rank.id, e.target.value)}
+                            />
+                          </TableCell>
+                          <TableCell>{rank.student?.roll_number}</TableCell>
+                          <TableCell className="font-medium">{rank.student?.name}</TableCell>
+                          <TableCell className="text-center font-semibold">{rank.total_marks}</TableCell>
+                          <TableCell className="text-center">{rank.percentage.toFixed(2)}%</TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline">{rank.grade}</Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge className={rank.is_passed ? "bg-success" : "bg-destructive"}>
+                              {rank.is_passed ? "PASS" : "FAIL"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {rank.has_conflict ? (
+                              <Badge
+                                variant="outline"
+                                className="border-warning text-warning"
+                                title="Tie auto-resolved by roll number (lower roll = higher rank)"
+                              >
+                                <AlertTriangle className="mr-1 h-3 w-3" /> ⚠️ Tie auto-resolved
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="border-success text-success">
+                                <Check className="mr-1 h-3 w-3" /> OK
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
