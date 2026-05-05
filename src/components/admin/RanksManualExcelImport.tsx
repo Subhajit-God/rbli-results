@@ -99,7 +99,32 @@ const RanksManualExcelImport = ({ examId, examName, onImported }: Props) => {
 
       const totalsByStudent: Record<string, number> = {};
       (ranks || []).forEach((r: any) => {
-        totalsByStudent[r.student_id] = Number(r.total_marks) || 0;
+        const t = Number(r.total_marks);
+        if (Number.isFinite(t) && t > 0) totalsByStudent[r.student_id] = t;
+      });
+
+      // Fallback: compute totals directly from marks table for any student
+      // who doesn't have a ranks row yet (or whose total is 0).
+      const { data: marksRows, error: mErr } = await supabase
+        .from("marks")
+        .select("student_id, marks_1, marks_2, marks_3")
+        .eq("exam_id", examId);
+      if (mErr) throw mErr;
+
+      const toNum = (v: any) => {
+        if (v === null || v === undefined) return 0;
+        const s = String(v).trim().toUpperCase();
+        if (s === "" || s === "AB" || s === "EX" || s === "—") return 0;
+        const n = parseFloat(s);
+        return Number.isFinite(n) ? n : 0;
+      };
+      const computed: Record<string, number> = {};
+      (marksRows || []).forEach((m: any) => {
+        const sum = toNum(m.marks_1) + toNum(m.marks_2) + toNum(m.marks_3);
+        computed[m.student_id] = (computed[m.student_id] || 0) + sum;
+      });
+      Object.keys(computed).forEach((sid) => {
+        if (!totalsByStudent[sid]) totalsByStudent[sid] = computed[sid];
       });
 
       const wb = new ExcelJS.Workbook();
