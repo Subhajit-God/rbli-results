@@ -298,7 +298,28 @@ const DeploySection = () => {
     }
   };
 
-  return (
+  const handleRecalcAll = async () => {
+    if (!selectedExam) return;
+    setIsRecalculating(true);
+    try {
+      const results = await recalculateAllClasses(selectedExam);
+      const total = results.reduce((s, r) => s + r.studentsRanked, 0);
+      const ties = results.reduce((s, r) => s + r.ties, 0);
+      await supabase.from("activity_logs").insert({
+        action: "RANKS_RECALCULATED_ALL",
+        details: { exam_id: selectedExam, total_students: total, ties, source: "deploy_section" },
+      });
+      toast({
+        title: "Ranks recalculated",
+        description: `${total} students across classes 5–9. ${ties} tie(s) auto-resolved.`,
+      });
+      await runDeploymentChecks();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message || "Failed to recalculate ranks" });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
     <div className="space-y-6">
       <div>
         <h2 className="text-xl sm:text-2xl font-bold">Deploy Results</h2>
