@@ -384,9 +384,29 @@ const DeploySection = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button onClick={runDeploymentChecks} disabled={isChecking}>
-                  {isChecking ? "Checking..." : "Run Checks"}
-                </Button>
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>How ranks are computed:</strong> students are sorted by{" "}
+                    <em>total marks (highest first)</em>; ties are broken by the{" "}
+                    <em>lower roll number getting the higher rank</em>. AB / EX count as 0.
+                    Deployment is blocked until ranks are recalculated after any marks change.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={runDeploymentChecks} disabled={isChecking}>
+                    {isChecking ? "Checking..." : "Run Checks"}
+                  </Button>
+                  <Button
+                    onClick={handleRecalcAll}
+                    disabled={isRecalculating}
+                    variant="secondary"
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRecalculating ? 'animate-spin' : ''}`} />
+                    {isRecalculating ? "Recalculating..." : "Recalculate Ranks (All Classes)"}
+                  </Button>
+                </div>
 
                 {checks.length > 0 && (
                   <div className="space-y-2 mt-4">
