@@ -56,6 +56,7 @@ const DeploySection = () => {
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
   const [scheduleAt, setScheduleAt] = useState<string>("");
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   const { toast } = useToast();
 
