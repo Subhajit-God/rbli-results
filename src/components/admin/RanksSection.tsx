@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Save, AlertTriangle, Check, X } from "lucide-react";
+import { RefreshCw, Save, AlertTriangle, Check, X, Info, Layers } from "lucide-react";
+import { recalculateClassRanks, recalculateAllClasses } from "@/lib/rankCalculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,113 +137,41 @@ const RanksSection = () => {
 
   const calculateRanks = async () => {
     if (!selectedExam) return;
-
     setIsCalculating(true);
     try {
-      // Get all students for selected class
-      const { data: students, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('class_number', parseInt(selectedClass));
-
-      if (studentsError) throw studentsError;
-
-      // Get all marks for this exam
-      const { data: marks, error: marksError } = await supabase
-        .from('marks')
-        .select(`
-          *,
-          subjects:subject_id (
-            full_marks_1,
-            full_marks_2,
-            full_marks_3,
-            class_number
-          )
-        `)
-        .eq('exam_id', selectedExam);
-
-      if (marksError) throw marksError;
-
-      // Calculate totals for each student
-      const studentTotals: Record<string, { total: number; fullMarks: number }> = {};
-      
-      marks?.forEach((mark: any) => {
-        if (mark.subjects?.class_number?.toString() !== selectedClass) return;
-        
-        if (!studentTotals[mark.student_id]) {
-          studentTotals[mark.student_id] = { total: 0, fullMarks: 0 };
-        }
-        
-        const m1 = ['AB', 'EX'].includes(mark.marks_1?.toUpperCase() || '') ? 0 : parseFloat(mark.marks_1) || 0;
-        const m2 = ['AB', 'EX'].includes(mark.marks_2?.toUpperCase() || '') ? 0 : parseFloat(mark.marks_2) || 0;
-        const m3 = ['AB', 'EX'].includes(mark.marks_3?.toUpperCase() || '') ? 0 : parseFloat(mark.marks_3) || 0;
-        
-        studentTotals[mark.student_id].total += m1 + m2 + m3;
-        studentTotals[mark.student_id].fullMarks += 
-          (mark.subjects?.full_marks_1 || 0) + 
-          (mark.subjects?.full_marks_2 || 0) + 
-          (mark.subjects?.full_marks_3 || 0);
-      });
-
-      // Build student lookup for roll-number tiebreak
-      const studentById: Record<string, any> = {};
-      students?.forEach((s: any) => { studentById[s.id] = s; });
-
-      // Sort by total marks (desc), then roll number (asc) — deterministic tie-break.
-      const sortedStudents = Object.entries(studentTotals)
-        .filter(([sid]) => studentById[sid])
-        .sort(([sidA, a], [sidB, b]) => {
-          if (b.total !== a.total) return b.total - a.total;
-          // Lower roll number gets the higher rank
-          return (studentById[sidA].roll_number ?? 0) - (studentById[sidB].roll_number ?? 0);
-        });
-
-      // Detect ties (same total) — these will be auto-resolved by roll number,
-      // but we still flag them with has_conflict so the UI shows ⚠️.
-      const totalCounts: Record<number, number> = {};
-      sortedStudents.forEach(([, { total }]) => {
-        totalCounts[total] = (totalCounts[total] || 0) + 1;
-      });
-
-      // Assign distinct sequential ranks (1..n) — guaranteed unique because of the tiebreak.
-      const rankUpserts = sortedStudents.map(([studentId, { total, fullMarks }], index) => {
-        const percentage = fullMarks > 0 ? (total / fullMarks) * 100 : 0;
-        const grade = getGrade(percentage);
-        const isPassed = percentage >= 25;
-        const tieResolved = totalCounts[total] > 1;
-
-        return {
-          student_id: studentId,
-          exam_id: selectedExam,
-          total_marks: total,
-          percentage: parseFloat(percentage.toFixed(2)),
-          grade,
-          rank: index + 1,
-          is_passed: isPassed,
-          has_conflict: tieResolved,
-        };
-      });
-
-      const { error: upsertError } = await supabase
-        .from('ranks')
-        .upsert(rankUpserts, { onConflict: 'student_id,exam_id' });
-
-      if (upsertError) throw upsertError;
-
-      const tieCount = rankUpserts.filter(r => r.has_conflict).length;
+      const res = await recalculateClassRanks(selectedExam, parseInt(selectedClass));
       toast({
         title: "Ranks calculated",
-        description: tieCount > 0
-          ? `${tieCount} tie(s) auto-resolved by roll number (lower roll = higher rank).`
-          : "All ranks assigned with no ties.",
+        description: res.ties > 0
+          ? `${res.studentsRanked} ranked. ${res.ties} tie(s) auto-resolved by roll number.`
+          : `${res.studentsRanked} ranked. No ties.`,
       });
       fetchRanks();
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to calculate ranks",
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to calculate ranks" });
+    } finally {
+      setIsCalculating(false);
+    }
+  };
+
+  const recalcAllClasses = async () => {
+    if (!selectedExam) return;
+    setIsCalculating(true);
+    try {
+      const results = await recalculateAllClasses(selectedExam);
+      const total = results.reduce((s, r) => s + r.studentsRanked, 0);
+      const ties = results.reduce((s, r) => s + r.ties, 0);
+      await supabase.from("activity_logs").insert({
+        action: "RANKS_RECALCULATED_ALL",
+        details: { exam_id: selectedExam, total_students: total, ties },
       });
+      toast({
+        title: "All classes recalculated",
+        description: `${total} students ranked across classes 5–9. ${ties} tie(s) auto-resolved.`,
+      });
+      fetchRanks();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to recalculate" });
     } finally {
       setIsCalculating(false);
     }
@@ -341,10 +270,18 @@ const RanksSection = () => {
               </Select>
             </div>
 
-            <div className="flex items-end gap-2 md:col-span-2">
+            <div className="flex flex-wrap items-end gap-2 md:col-span-2">
               <Button onClick={calculateRanks} disabled={!selectedExam || isCalculating}>
                 <RefreshCw className={`mr-2 h-4 w-4 ${isCalculating ? 'animate-spin' : ''}`} />
-                {isCalculating ? "Calculating..." : "Calculate Ranks"}
+                {isCalculating ? "Calculating..." : "Calculate (this class)"}
+              </Button>
+              <Button
+                onClick={recalcAllClasses}
+                disabled={!selectedExam || isCalculating}
+                variant="secondary"
+              >
+                <Layers className="mr-2 h-4 w-4" />
+                Recalculate All Classes
               </Button>
               {ranks.length > 0 && (
                 <Button onClick={saveRanks} variant="outline">
@@ -356,6 +293,22 @@ const RanksSection = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* How ranks are computed — info panel */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>How ranks are computed:</strong> students are sorted by{" "}
+          <em>total marks (highest first)</em>; ties are broken by the{" "}
+          <em>lower roll number getting the higher rank</em>. AB / EX count as 0.
+          Pass mark is 25%. Recalculate after any marks change to keep data in sync.
+          {hasConflicts && (
+            <span className="block mt-1 text-warning">
+              ⚠️ {ranks.filter(r => r.has_conflict).length} tie(s) auto-resolved in this class.
+            </span>
+          )}
+        </AlertDescription>
+      </Alert>
 
       {/* Manual Rank Excel Import (all classes in one file) */}
       {selectedExam && (

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Rocket, Undo, AlertTriangle, CheckCircle, XCircle, Shield, Clock, CalendarClock } from "lucide-react";
+import { Rocket, Undo, AlertTriangle, CheckCircle, XCircle, Shield, Clock, CalendarClock, Info, RefreshCw } from "lucide-react";
+import { ranksAreStale, recalculateAllClasses } from "@/lib/rankCalculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,6 +56,7 @@ const DeploySection = () => {
   const [showRollbackDialog, setShowRollbackDialog] = useState(false);
   const [scheduleAt, setScheduleAt] = useState<string>("");
   const [isScheduling, setIsScheduling] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   const { toast } = useToast();
 
@@ -205,6 +207,16 @@ const DeploySection = () => {
           : "No ties detected",
       });
 
+      // Check 7: Ranks fresh — block deploy if marks updated after ranks
+      const stale = await ranksAreStale(selectedExam);
+      newChecks.push({
+        name: "Ranks Up-to-date",
+        passed: !stale.stale,
+        message: stale.stale
+          ? "Marks were edited after ranks — recalculate before deploying"
+          : "Ranks are in sync with marks",
+      });
+
       setChecks(newChecks);
     } catch (error) {
       console.error('Error running checks:', error);
@@ -286,6 +298,29 @@ const DeploySection = () => {
     }
   };
 
+  const handleRecalcAll = async () => {
+    if (!selectedExam) return;
+    setIsRecalculating(true);
+    try {
+      const results = await recalculateAllClasses(selectedExam);
+      const total = results.reduce((s, r) => s + r.studentsRanked, 0);
+      const ties = results.reduce((s, r) => s + r.ties, 0);
+      await supabase.from("activity_logs").insert({
+        action: "RANKS_RECALCULATED_ALL",
+        details: { exam_id: selectedExam, total_students: total, ties, source: "deploy_section" },
+      });
+      toast({
+        title: "Ranks recalculated",
+        description: `${total} students across classes 5–9. ${ties} tie(s) auto-resolved.`,
+      });
+      await runDeploymentChecks();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Error", description: e.message || "Failed to recalculate ranks" });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -349,9 +384,29 @@ const DeploySection = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button onClick={runDeploymentChecks} disabled={isChecking}>
-                  {isChecking ? "Checking..." : "Run Checks"}
-                </Button>
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>How ranks are computed:</strong> students are sorted by{" "}
+                    <em>total marks (highest first)</em>; ties are broken by the{" "}
+                    <em>lower roll number getting the higher rank</em>. AB / EX count as 0.
+                    Deployment is blocked until ranks are recalculated after any marks change.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={runDeploymentChecks} disabled={isChecking}>
+                    {isChecking ? "Checking..." : "Run Checks"}
+                  </Button>
+                  <Button
+                    onClick={handleRecalcAll}
+                    disabled={isRecalculating}
+                    variant="secondary"
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${isRecalculating ? 'animate-spin' : ''}`} />
+                    {isRecalculating ? "Recalculating..." : "Recalculate Ranks (All Classes)"}
+                  </Button>
+                </div>
 
                 {checks.length > 0 && (
                   <div className="space-y-2 mt-4">
