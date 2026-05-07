@@ -105,7 +105,11 @@ Deno.serve(async (req: Request) => {
   }
 
   // --- Activate any scheduled releases whose time has passed (no-op if none) ---
-  await supabase.rpc("activate_scheduled_releases").catch(() => {});
+  try {
+    await supabase.rpc("activate_scheduled_releases");
+  } catch (e) {
+    console.error("activate_scheduled_releases failed:", e);
+  }
 
   // --- Look up student ---
   const { data: students, error: studentError } = await supabase
@@ -131,12 +135,13 @@ Deno.serve(async (req: Request) => {
     resultPayload = { error: "Invalid details. Please check and try again.", code: "NOT_FOUND" };
   } else {
     const student = students[0];
-    const { data: deployedExam, error: examError } = await supabase
-      .from("exams")
-      .select("id")
-      .eq("id", student.academic_year_id)
-      .eq("is_deployed", true)
-      .maybeSingle();
+    // Prefer the student's own academic year if linked; otherwise fall back to the
+    // currently-deployed exam (handles legacy student rows with null academic_year_id).
+    let examQuery = supabase.from("exams").select("id").eq("is_deployed", true);
+    if (student.academic_year_id) {
+      examQuery = examQuery.eq("id", student.academic_year_id);
+    }
+    const { data: deployedExam, error: examError } = await examQuery.maybeSingle();
 
     if (examError) {
       console.error("Exam lookup error:", examError);
