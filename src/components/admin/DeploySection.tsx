@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Rocket, Undo, AlertTriangle, CheckCircle, XCircle, Shield, Clock, CalendarClock } from "lucide-react";
+import { Rocket, Undo, AlertTriangle, CheckCircle, XCircle, Shield, Clock, CalendarClock, Info, RefreshCw } from "lucide-react";
+import { ranksAreStale, recalculateAllClasses } from "@/lib/rankCalculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
