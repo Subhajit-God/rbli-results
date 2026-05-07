@@ -320,6 +320,8 @@ const DeploySection = () => {
       setIsRecalculating(false);
     }
   };
+
+  return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl sm:text-2xl font-bold">Deploy Results</h2>
