@@ -207,6 +207,16 @@ const DeploySection = () => {
           : "No ties detected",
       });
 
+      // Check 7: Ranks fresh — block deploy if marks updated after ranks
+      const stale = await ranksAreStale(selectedExam);
+      newChecks.push({
+        name: "Ranks Up-to-date",
+        passed: !stale.stale,
+        message: stale.stale
+          ? "Marks were edited after ranks — recalculate before deploying"
+          : "Ranks are in sync with marks",
+      });
+
       setChecks(newChecks);
     } catch (error) {
       console.error('Error running checks:', error);
