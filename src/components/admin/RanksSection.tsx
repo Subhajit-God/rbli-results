@@ -270,10 +270,18 @@ const RanksSection = () => {
               </Select>
             </div>
 
-            <div className="flex items-end gap-2 md:col-span-2">
+            <div className="flex flex-wrap items-end gap-2 md:col-span-2">
               <Button onClick={calculateRanks} disabled={!selectedExam || isCalculating}>
                 <RefreshCw className={`mr-2 h-4 w-4 ${isCalculating ? 'animate-spin' : ''}`} />
-                {isCalculating ? "Calculating..." : "Calculate Ranks"}
+                {isCalculating ? "Calculating..." : "Calculate (this class)"}
+              </Button>
+              <Button
+                onClick={recalcAllClasses}
+                disabled={!selectedExam || isCalculating}
+                variant="secondary"
+              >
+                <Layers className="mr-2 h-4 w-4" />
+                Recalculate All Classes
               </Button>
               {ranks.length > 0 && (
                 <Button onClick={saveRanks} variant="outline">
@@ -285,6 +293,22 @@ const RanksSection = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* How ranks are computed — info panel */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          <strong>How ranks are computed:</strong> students are sorted by{" "}
+          <em>total marks (highest first)</em>; ties are broken by the{" "}
+          <em>lower roll number getting the higher rank</em>. AB / EX count as 0.
+          Pass mark is 25%. Recalculate after any marks change to keep data in sync.
+          {hasConflicts && (
+            <span className="block mt-1 text-warning">
+              ⚠️ {ranks.filter(r => r.has_conflict).length} tie(s) auto-resolved in this class.
+            </span>
+          )}
+        </AlertDescription>
+      </Alert>
 
       {/* Manual Rank Excel Import (all classes in one file) */}
       {selectedExam && (
