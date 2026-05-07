@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Save, AlertTriangle, Check, X } from "lucide-react";
+import { RefreshCw, Save, AlertTriangle, Check, X, Info, Layers } from "lucide-react";
+import { recalculateClassRanks, recalculateAllClasses } from "@/lib/rankCalculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
