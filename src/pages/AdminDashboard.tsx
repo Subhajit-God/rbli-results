@@ -87,7 +87,7 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isPromotionExporting, setIsPromotionExporting] = useState(false);
+  // (isPromotionExporting moved to ExamsSection)
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalSubjects: 0,
