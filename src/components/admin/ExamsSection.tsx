@@ -430,30 +430,35 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
 
   // Check if there's a deployed exam
   const hasDeployedExam = exams.some(e => e.is_deployed);
-  
-  // Get the current academic year
+
+  // Get the current/deployed academic year
   const currentAcademicYear = exams.find(e => e.is_current);
+  const deployedExam = exams.find((e) => e.is_deployed) || currentAcademicYear || null;
 
-  const handleSetCurrent = async (exam: Exam) => {
+  const [isPromotionZipExporting, setIsPromotionZipExporting] = useState(false);
+  const handlePromotionZip = async () => {
+    if (!deployedExam) return;
+    setIsPromotionZipExporting(true);
     try {
-      const { error } = await supabase
-        .from('exams')
-        .update({ is_current: true })
-        .eq('id', exam.id);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Current Year Set",
-        description: `${exam.academic_year} is now the current academic year`,
+      const summary = await downloadPromotionZip({
+        id: deployedExam.id,
+        name: deployedExam.name,
+        academic_year: deployedExam.academic_year,
+        deployed_at: deployedExam.deployed_at,
       });
-      fetchExams();
+      const total = Object.values(summary).reduce((a, b) => a + b, 0);
+      toast({
+        title: "Promotion Export Downloaded",
+        description: `${total} students across 5 Excel files (Class 6–10) saved to your downloads.`,
+      });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to set current academic year",
+        title: "Export Failed",
+        description: error.message || "Failed to generate promotion export.",
       });
+    } finally {
+      setIsPromotionZipExporting(false);
     }
   };
 
@@ -469,15 +474,42 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
         </Button>
       </div>
 
-      {hasDeployedExam && (
-        <Alert className="border-warning/50 bg-warning/10">
-          <ArrowUpCircle className="h-4 w-4 text-warning" />
-          <AlertDescription>
-            <strong>Results are deployed!</strong> Create a new academic year to promote students and 
-            start fresh. Class 9 students will be exported to Excel for Class 10 promotion.
-          </AlertDescription>
-        </Alert>
+      {hasDeployedExam && deployedExam && (
+        <Card className="border-warning/40 bg-warning/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-warning" />
+              Promotion Export — {deployedExam.academic_year}
+            </CardTitle>
+            <CardDescription>
+              Download a ZIP containing 5 Excel rosters (Class 6, 7, 8, 9, 10).
+              Class 5–8 students are promoted to the next class; Class 9 is
+              exported as the outgoing Class 10 list.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
+              <li>New roll numbers assigned by rank (rank 1 → roll 1).</li>
+              <li>Section: odd roll → A, even roll → B.</li>
+              <li>Columns: SL.No, New Student ID, New Roll No, Section, Name, Father, Mother, DOB, Previous Class, Previous Roll.</li>
+            </ul>
+            <Button onClick={handlePromotionZip} disabled={isPromotionZipExporting} className="w-full sm:w-auto">
+              {isPromotionZipExporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Building ZIP...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Promotion Export (.zip)
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
       )}
+
 
       <Alert className="border-primary/30 bg-primary/5">
         <Info className="h-4 w-4 text-primary" />
