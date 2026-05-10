@@ -1,44 +1,41 @@
-import { AlertTriangle, Calendar, X } from "lucide-react";
+import { Lock, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useState } from "react";
 
 interface DeploymentOverlayProps {
   onNavigateToAcademicYear: () => void;
   deployedYear?: string;
 }
 
+/**
+ * Hard read-only lock banner. Shown above Students / Marks / Ranks / Subjects
+ * / Settings whenever the current academic year is already deployed.
+ *
+ * The banner cannot be dismissed — it always renders, and the section beneath
+ * is wrapped in a `pointer-events-none` overlay so no edits/imports/deletes
+ * can be triggered from the UI. Database-level RLS + the
+ * `enforce_class_lock_on_marks` trigger remain the source of truth.
+ */
 const DeploymentOverlay = ({ onNavigateToAcademicYear, deployedYear }: DeploymentOverlayProps) => {
-  const [isDismissed, setIsDismissed] = useState(false);
-
-  if (isDismissed) return null;
-
   return (
-    <Alert className="mb-4 border-warning/50 bg-warning/10">
-      <AlertTriangle className="h-4 w-4 text-warning" />
-      <AlertTitle className="flex items-center justify-between">
-        <span>Results Deployed for {deployedYear || 'Current Year'}</span>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 -mr-2"
-          onClick={() => setIsDismissed(true)}
-        >
-          <X className="h-4 w-4" />
-        </Button>
+    <Alert className="mb-4 border-warning/60 bg-warning/10">
+      <Lock className="h-4 w-4 text-warning" />
+      <AlertTitle className="text-warning">
+        Locked — Results Deployed for {deployedYear || "Current Year"}
       </AlertTitle>
       <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
         <span className="text-sm text-muted-foreground flex-1">
-          To make changes, create a new academic year or update the current one.
+          This tab is read-only. To edit students, marks, or ranks, roll back the
+          deployment from the Deploy tab or create a new academic year.
         </span>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           size="sm"
           className="border-warning/50 hover:bg-warning/10"
           onClick={onNavigateToAcademicYear}
         >
           <Calendar className="mr-2 h-3 w-3" />
-          Go to Academic Year
+          Academic Year
         </Button>
       </AlertDescription>
     </Alert>
