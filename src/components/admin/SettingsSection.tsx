@@ -21,7 +21,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PdfAssetsSection from "./PdfAssetsSection";
 import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
-import { downloadPromotionExport } from "@/lib/promotionExport";
 
 const SettingsSection = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
