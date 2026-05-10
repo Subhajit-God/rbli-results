@@ -34,7 +34,7 @@ const SettingsSection = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [isPromotionExporting, setIsPromotionExporting] = useState(false);
+  // (Promotion Export moved to Academic Year tab)
   const [isImporting, setIsImporting] = useState(false);
   const [resetError, setResetError] = useState("");
   const [deleteAdminError, setDeleteAdminError] = useState("");
