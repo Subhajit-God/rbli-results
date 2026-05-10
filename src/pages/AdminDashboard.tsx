@@ -23,8 +23,6 @@ import {
   ShieldCheck,
   History,
   BarChart3,
-  Download,
-  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +38,7 @@ import DeploymentOverlay from "@/components/admin/DeploymentOverlay";
 import CurrentYearBanner from "@/components/admin/CurrentYearBanner";
 import { useDeploymentStatus } from "@/hooks/useDeploymentStatus";
 import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
-import { downloadPromotionExport } from "@/lib/promotionExport";
+
 
 // Import dashboard sections
 import StudentsSection from "@/components/admin/StudentsSection";
@@ -87,7 +85,7 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState<Section>("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isPromotionExporting, setIsPromotionExporting] = useState(false);
+  // (isPromotionExporting moved to ExamsSection)
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalSubjects: 0,
@@ -212,32 +210,8 @@ const AdminDashboard = () => {
     navigate('/');
   };
 
-  const handlePromotionExport = async () => {
-    if (!currentYear?.is_deployed) return;
+  // (Promotion Export handler moved to Academic Year tab — ExamsSection)
 
-    setIsPromotionExporting(true);
-    try {
-      const summary = await downloadPromotionExport({
-        id: currentYear.id,
-        name: currentYear.name,
-        academic_year: currentYear.academic_year,
-        deployed_at: null,
-      });
-
-      toast({
-        title: "Promotion Export Downloaded",
-        description: `Exported ${summary.promotedStudentsCount} promoted students, ${summary.subjectsCount} subjects, and ${summary.marksCount} marks.`,
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Export Failed",
-        description: error.message || "Failed to download promotion export.",
-      });
-    } finally {
-      setIsPromotionExporting(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -378,34 +352,8 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            {currentYear?.is_deployed && (
-              <Card className="glass-effect border-warning/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-glow-orange">
-                    <Download className="h-5 w-5 text-warning" />
-                    Post-Deployment Export
-                  </CardTitle>
-                  <CardDescription>
-                    Download promotion-ready student data with subjects and marks before using reset tools in Settings.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button onClick={handlePromotionExport} disabled={isPromotionExporting} className="w-full sm:w-auto">
-                    {isPromotionExporting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Downloading...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Promoted Student JSON
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            {/* Promotion Export now lives in the Academic Year tab */}
+
 
             {/* Workflow Guide */}
             <Card className="glass-effect border-warning/30">
@@ -634,7 +582,17 @@ const AdminDashboard = () => {
               deployedYear={currentYear?.academic_year}
             />
           )}
-          {renderSection()}
+          {showDeploymentWarning ? (
+            <div
+              className="pointer-events-none select-none opacity-60"
+              aria-disabled="true"
+              {...({ inert: "" } as Record<string, string>)}
+            >
+              {renderSection()}
+            </div>
+          ) : (
+            renderSection()
+          )}
         </div>
       </main>
     </div>

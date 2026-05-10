@@ -21,7 +21,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import PdfAssetsSection from "./PdfAssetsSection";
 import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
-import { downloadPromotionExport } from "@/lib/promotionExport";
 
 const SettingsSection = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -35,7 +34,7 @@ const SettingsSection = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [isDeletingAdmin, setIsDeletingAdmin] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [isPromotionExporting, setIsPromotionExporting] = useState(false);
+  // (Promotion Export moved to Academic Year tab)
   const [isImporting, setIsImporting] = useState(false);
   const [resetError, setResetError] = useState("");
   const [deleteAdminError, setDeleteAdminError] = useState("");
@@ -65,32 +64,7 @@ const SettingsSection = () => {
   const { toast } = useToast();
   const { currentYear } = useCurrentAcademicYear();
 
-  const handlePromotionExport = async () => {
-    if (!currentYear?.is_deployed) return;
-
-    setIsPromotionExporting(true);
-    try {
-      const summary = await downloadPromotionExport({
-        id: currentYear.id,
-        name: currentYear.name,
-        academic_year: currentYear.academic_year,
-        deployed_at: null,
-      });
-
-      toast({
-        title: "Promotion Export Downloaded",
-        description: `Exported ${summary.promotedStudentsCount} promoted students, ${summary.subjectsCount} subjects, and ${summary.marksCount} marks.`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Export Failed",
-        description: error.message || "Failed to download promotion export",
-        variant: "destructive",
-      });
-    } finally {
-      setIsPromotionExporting(false);
-    }
-  };
+  // (Promotion Export handler moved to ExamsSection)
 
   const handleExportData = async () => {
     setIsExporting(true);
@@ -434,34 +408,8 @@ const SettingsSection = () => {
       {/* PDF Signature & Stamp */}
       <PdfAssetsSection />
 
-      {currentYear?.is_deployed && (
-        <Card className="border-warning/40 bg-warning/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5 text-warning" />
-              Promotion Export
-            </CardTitle>
-            <CardDescription>
-              Download promoted student data with subjects, marks, and ranks for {currentYear.academic_year} before resetting the database.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handlePromotionExport} disabled={isPromotionExporting} className="w-full sm:w-auto">
-              {isPromotionExporting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Promoted Student JSON
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      {/* Promotion Export now lives in the Academic Year tab */}
+
 
       {/* Backup & Export */}
       <Card>
