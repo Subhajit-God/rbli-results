@@ -539,13 +539,6 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
                   >
                     <Edit className="mr-1 h-3 w-3" /> Edit
                   </Button>
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleOpenDialog(exam)}
-                    disabled={exam.is_deployed}
-                  >
-                    <Edit className="mr-1 h-3 w-3" /> Edit
-                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
