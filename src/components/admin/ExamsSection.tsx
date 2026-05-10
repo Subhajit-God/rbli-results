@@ -531,17 +531,14 @@ const ExamsSection = ({ onDeploymentChange }: ExamsSectionProps) => {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {!exam.is_current && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSetCurrent(exam)}
-                      className="border-primary/50 text-primary hover:bg-primary/10"
-                    >
-                      <CheckCircle2 className="mr-1 h-3 w-3" /> Set Current
-                    </Button>
-                  )}
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenDialog(exam)}
+                    disabled={exam.is_deployed}
+                  >
+                    <Edit className="mr-1 h-3 w-3" /> Edit
+                  </Button>
                     variant="outline"
                     size="sm"
                     onClick={() => handleOpenDialog(exam)}
