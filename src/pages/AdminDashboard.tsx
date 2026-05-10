@@ -638,7 +638,7 @@ const AdminDashboard = () => {
             <div
               className="pointer-events-none select-none opacity-60"
               aria-disabled="true"
-              inert={"" as unknown as boolean}
+              {...({ inert: "" } as Record<string, string>)}
             >
               {renderSection()}
             </div>
