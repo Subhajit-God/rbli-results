@@ -378,34 +378,8 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
-            {currentYear?.is_deployed && (
-              <Card className="glass-effect border-warning/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-glow-orange">
-                    <Download className="h-5 w-5 text-warning" />
-                    Post-Deployment Export
-                  </CardTitle>
-                  <CardDescription>
-                    Download promotion-ready student data with subjects and marks before using reset tools in Settings.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button onClick={handlePromotionExport} disabled={isPromotionExporting} className="w-full sm:w-auto">
-                    {isPromotionExporting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Downloading...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-2 h-4 w-4" />
-                        Download Promoted Student JSON
-                      </>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+            {/* Promotion Export now lives in the Academic Year tab */}
+
 
             {/* Workflow Guide */}
             <Card className="glass-effect border-warning/30">
