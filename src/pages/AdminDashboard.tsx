@@ -634,7 +634,17 @@ const AdminDashboard = () => {
               deployedYear={currentYear?.academic_year}
             />
           )}
-          {renderSection()}
+          {showDeploymentWarning ? (
+            <div
+              className="pointer-events-none select-none opacity-60"
+              aria-disabled="true"
+              inert={"" as unknown as boolean}
+            >
+              {renderSection()}
+            </div>
+          ) : (
+            renderSection()
+          )}
         </div>
       </main>
     </div>
