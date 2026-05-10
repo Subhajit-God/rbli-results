@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { Plus, Edit, Trash2, Calendar, Info, ArrowUpCircle, Download, Users, CheckCircle2, Star } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, Info, ArrowUpCircle, Download, Users, Star, Loader2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { downloadPromotionZip } from "@/lib/promotionExport";
 import {
   Dialog,
   DialogContent,
