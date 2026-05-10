@@ -40,7 +40,7 @@ import DeploymentOverlay from "@/components/admin/DeploymentOverlay";
 import CurrentYearBanner from "@/components/admin/CurrentYearBanner";
 import { useDeploymentStatus } from "@/hooks/useDeploymentStatus";
 import { useCurrentAcademicYear } from "@/hooks/useCurrentAcademicYear";
-import { downloadPromotionExport } from "@/lib/promotionExport";
+
 
 // Import dashboard sections
 import StudentsSection from "@/components/admin/StudentsSection";
