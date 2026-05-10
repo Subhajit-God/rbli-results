@@ -212,32 +212,8 @@ const AdminDashboard = () => {
     navigate('/');
   };
 
-  const handlePromotionExport = async () => {
-    if (!currentYear?.is_deployed) return;
+  // (Promotion Export handler moved to Academic Year tab — ExamsSection)
 
-    setIsPromotionExporting(true);
-    try {
-      const summary = await downloadPromotionExport({
-        id: currentYear.id,
-        name: currentYear.name,
-        academic_year: currentYear.academic_year,
-        deployed_at: null,
-      });
-
-      toast({
-        title: "Promotion Export Downloaded",
-        description: `Exported ${summary.promotedStudentsCount} promoted students, ${summary.subjectsCount} subjects, and ${summary.marksCount} marks.`,
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Export Failed",
-        description: error.message || "Failed to download promotion export.",
-      });
-    } finally {
-      setIsPromotionExporting(false);
-    }
-  };
 
   if (isLoading) {
     return (
